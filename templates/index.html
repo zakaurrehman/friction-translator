@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friction Language Translator - Transform Your Communication</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/footer.css">
+    <link rel="stylesheet" href="/static/css/sidebar-menu.css">
+    <link rel="stylesheet" href="/static/css/coherence-styles.css">
+</head>
+<body>
+    <!-- Header -->
+    
+    <div class="header">
+        <div class="logo">
+        <button class="menu-button" id="menuButton">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="logo-wrapper">
+            <div class="logo-icon">
+            <i class="fas fa-language"></i>
+            </div>
+            <span class="logo-text">Friction Translator</span>
+        </div>
+        </div>
+        <div class="doc-title" id="docTitle">Untitled document</div>
+        <div class="actions">
+            <button id="clearBtn" class="btn secondary-btn">
+              <i class="fas fa-undo-alt"></i>
+              Reset
+            </button>
+          
+            {% if session.get('logged_in') %}
+              <a href="{{ url_for('logout') }}" class="btn secondary-btn logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+              </a>
+            {% endif %}
+          </div>          
+    </div>
+  
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Editor Area -->
+        <div class="editor-area">
+            <div class="editor">
+                <div class="editor-container">
+                    <div id="contentArea">
+                        <div class="textarea-container">
+                            <div
+                              id="inputText"
+                              class="rich-editor"
+                              contenteditable="true"
+                              placeholder="Write or paste your text with friction language here..."
+                            ></div>
+                            <div class="placeholder">Write or paste your text with friction language here...</div>
+                          </div>                          
+                        
+                        <div class="file-upload">
+                            <label for="fileInput" class="file-upload-btn">
+                                <i class="fas fa-file-upload"></i>
+                                Upload a document
+                            </label>
+                            <input type="file" id="fileInput" class="file-input" accept=".txt,.doc,.docx,.pdf">
+                        </div>
+                        
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-language"></i>
+                            </div>
+                            <div class="empty-state-text">Transform your communication</div>
+                            <div class="empty-state-subtext">Our AI-powered translator helps you identify and improve friction language that may create resistance in your communication.</div>
+                        </div>
+                    </div>
+
+                    <div class="results-container" id="resultsContainer" style="display: none;">
+                        <div class="results-heading" style="display: flex; align-items: center; justify-content: space-between;">
+                          <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Translation Complete</span>
+                          </div>
+                          <div class="results-actions">
+                            <button id="copyBtn" class="icon-btn copy-btn" title="Copy translated text">
+                              <i class="fas fa-copy"></i>
+                            </button>
+                            <button id="downloadBtn" class="icon-btn" title="Download as document">
+                              <i class="fas fa-download"></i>
+                            </button>
+                            <button id="printBtn" class="icon-btn" title="Print">
+                              <i class="fas fa-print"></i>
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div class="text-section">
+                          <div class="text-section-title">
+                            <i class="fas fa-language"></i>
+                            <span>Improved Text</span>
+                          </div>
+                          <div id="tcLoader" class="loader" style="display:none;"></div>
+                          <div id="translatedText" class="text-display"></div>
+                        </div>
+                      </div>                      
+                </div>
+            </div>
+
+            <!-- Analysis Panel -->
+            <div class="analysis-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-search" style="color:black"></i>
+                        <span>Friction Analysis</span>
+                    </div>
+                </div>
+
+                <div class="panel-content" id="analysisContent">
+                    <div class="empty-panel" id="emptyAnalysis">
+                        <div class="panel-icon">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <h2 class="panel-title-lg">Friction Language Translator</h2>
+                        <p class="panel-subtitle">Identify and transform language that creates resistance in your communication</p>
+                        
+                        <div class="wizard-steps">
+                            <div class="wizard-step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <div class="step-title">Add your content</div>
+                                    <div class="step-description">Type or upload text that may contain friction language.</div>
+                                </div>
+                            </div>
+                            
+                            <div class="wizard-step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <div class="step-title">Run translation</div>
+                                    <div class="step-description">Our AI will analyze your text and identify friction points.</div>
+                                </div>
+                            </div>
+                            
+                            <div class="wizard-step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <div class="step-title">Review improvements</div>
+                                    <div class="step-description">See how your communication has been enhanced with more effective language.</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="model-info">
+                            <i class="fas fa-brain"></i>
+                            <span>Powered by Friction Translator for context-aware transformations</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Live Suggestions Panel -->
+                    <div id="liveSuggestions" style="display: none;">
+                        <div class="suggestions-header">
+                            <div class="suggestions-title">
+                                <i class="fas fa-lightbulb"></i>
+                                <span>Friction Points</span>
+                                <span id="suggestionCount" class="suggestion-count">0</span>
+                            </div>
+                        </div>
+                        
+                        <div class="category-tabs">
+                            <div class="category-tab active" data-category="all">All</div>
+                            <!-- <div class="category-tab" data-category="but">But/Yet</div>
+                            <div class="category-tab" data-category="should">Should/Could</div>
+                            <div class="category-tab" data-category="not">Not/Negative</div> -->
+                        </div>
+                        
+                        <!-- Coherence Issues Section (Initially Hidden) -->
+                        <div id="coherenceIssues" class="coherence-container" style="display: none;">
+                            <div class="coherence-header">
+                                <i class="fas fa-check-double"></i>
+                                <span class="coherence-title">Coherence Issues</span>
+                                <span id="coherenceCount" class="suggestion-count">0</span>
+                            </div>
+                            <div id="coherenceList" class="suggestion-list"></div>
+                        </div>
+                        
+                        <!-- Overall Suggestion (Initially Hidden) -->
+                        <div id="overallSuggestion" class="overall-suggestion" style="display: none;">
+                            <strong>Overall Suggestion:</strong>
+                            <span id="overallSuggestionText"></span>
+                            <button id="dismissOverallBtn" class="suggestion-action">Dismiss</button>
+                        </div>
+                        
+                        <div id="frictionWordsList" class="suggestion-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Formatting Toolbar -->
+    <div class="footer">
+        <div class="footer-left">
+        <div class="format-group">
+            <!-- in index.html footer -->
+            <button class="format-btn" data-cmd="bold"            title="Bold"><i class="fas fa-bold"></i></button>
+            <button class="format-btn" data-cmd="italic"          title="Italic"><i class="fas fa-italic"></i></button>
+            <button class="format-btn" data-cmd="insertUnorderedList" title="Bullet List"><i class="fas fa-list-ul"></i></button>
+            <button class="format-btn" data-cmd="insertOrderedList"   title="Numbered List"><i class="fas fa-list-ol"></i></button>           
+        </div>
+        </div>
+        
+        <div class="footer-center">
+            <button id="translateBtn" class="btn primary-btn">
+                <i class="fas fa-magic"></i>
+                Translate
+              </button>
+        </div>
+        
+        <div class="footer-right">
+        <div class="highlight-toggle">
+            <span class="toggle-text">Highlight Changes</span>
+            <label class="toggle-switch">
+            <input type="checkbox" id="highlightToggle" checked>
+            <span class="toggle-slider"></span>
+            </label>
+        </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Menu -->
+    <div class="sidebar-menu" id="sidebarMenu">
+        <div class="sidebar-header">
+            <button class="close-btn" id="closeSidebarBtn">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+        
+        <div class="sidebar-section">
+            <a href="/" class="sidebar-home">
+                <i class="fas fa-home"></i> Friction Translator
+            </a>
+        </div>
+        
+        <div class="sidebar-section">
+            <div class="section-title">DOCUMENT</div>
+            <div class="sidebar-item" id="newDocumentBtn">
+                <i class="fas fa-file"></i> New document
+            </div>
+            <div class="sidebar-item" id="uploadFileBtn">
+                <i class="fas fa-upload"></i> Upload file
+                <span class="file-types">.docx, .txt, .pdf</span>
+            </div>
+            <div class="sidebar-item" id="downloadBtn">
+                <i class="fas fa-download"></i>
+                Download <span class="shortcut">as .docx</span>
+            </div>
+            <div class="sidebar-item" id="printBtn">
+                <i class="fas fa-print"></i>
+                Print
+                <span class="shortcut">Ctrl+P</span>
+              </div>              
+        </div>
+        
+        <div class="sidebar-section">
+            <div class="section-title">EDIT</div>
+            <div class="sidebar-item" id="undoBtn">
+                <i class="fas fa-undo"></i> Undo
+                <span class="shortcut">Ctrl+Z</span>
+            </div>
+            <div class="sidebar-item" id="redoBtn">
+                <i class="fas fa-redo"></i> Redo
+                <span class="shortcut">Ctrl+Y</span>
+            </div>
+            <div class="sidebar-item" id="selectAllBtn">
+                <i class="fas fa-mouse-pointer"></i> Select all
+                <span class="shortcut">Ctrl+A</span>
+            </div>
+        </div>
+        
+        <div class="sidebar-section">
+            <div class="section-title">SETTINGS</div>
+            <div class="sidebar-item" id="editorSettingsBtn">
+                <i class="fas fa-cog"></i> Editor settings
+            </div>
+        </div>
+        
+        <div class="sidebar-section">
+            <div class="section-title">ACCOUNT</div>
+            <div class="account-info">
+                <div class="account-name">
+                    <div class="account-type">
+                        <span class="free-tag">Free</span>
+                    </div>
+                    <div>User Name</div>
+                    <div class="account-email">user@example.com</div>
+                </div>
+            </div>
+            <div class="sidebar-item" id="getProBtn">
+                <i class="fas fa-gem"></i> Upgrade to Pro
+                <span class="pro-badge">New</span>
+            </div>
+        </div>
+        
+        <div class="sidebar-section">
+            <div class="section-title">HELP</div>
+          
+            <div id="supportBtn" class="sidebar-item">
+              <i class="fas fa-question-circle"></i> Support
+            </div>
+          
+            <div id="docsBtn" class="sidebar-item">
+              <i class="fas fa-book"></i> Documentation
+            </div>
+          
+            <div id="feedbackBtn" class="sidebar-item">
+              <i class="fas fa-comment"></i> Feedback
+            </div>
+          </div>
+          
+    </div>
+
+    <!-- Overlay for sidebar menu -->
+    <div class="overlay" id="menuOverlay"></div>
+
+    <!-- Prompt Modal -->
+    <div id="promptModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Translation Prompt</h2>
+                <span class="modal-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="promptContent" class="prompt-content"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Coherence Details Modal -->
+    <div id="coherenceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Coherence Analysis</h2>
+                <span class="modal-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="coherenceModalContent" class="coherence-modal-content"></div>
+                <div class="modal-actions">
+                    <button id="fixAllCoherenceBtn" class="btn primary-btn">
+                        <i class="fas fa-magic"></i> Fix All Issues
+                    </button>
+                    <button id="closeCoherenceModalBtn" class="btn secondary-btn">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/sidebar-menu.js"></script>
+    <script src="/static/js/text-analyzer.js"></script>
+    <script src="/static/js/file-uploader.js"></script>
+    <script src="/static/js/file-upload-fix.js"></script>
+    <script src="/static/js/real-time-corrections.js"></script>
+    
+    <script>
+        // in main.js or a <script> after your HTML
+        document.querySelectorAll('.format-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.execCommand(btn.dataset.cmd, false, null);
+                inputText.focus();
+            });
+        });
+
+        // Add coherence check button event listener
+        document.getElementById('coherenceCheckBtn').addEventListener('click', function() {
+            if (window.checkTextCoherence) {
+                window.checkTextCoherence();
+            }
+        });
+
+        // Modal close buttons
+        document.querySelectorAll('.modal-close').forEach(closeBtn => {
+            closeBtn.addEventListener('click', function() {
+                this.closest('.modal').classList.remove('active');
+            });
+        });
+
+        // Close modals when clicking outside
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+
+        // Dismiss overall suggestion
+        document.getElementById('dismissOverallBtn').addEventListener('click', function() {
+            document.getElementById('overallSuggestion').style.display = 'none';
+        });
+    </script> 
+    
+    <form id="downloadForm" action="{{ url_for('download_docx') }}" method="POST" style="display: none;">
+        <input type="hidden" name="text" id="downloadTextInput" />
+        <input type="hidden" name="filename" id="downloadFilenameInput" />
+    </form>
+             
+</body>
+</html>

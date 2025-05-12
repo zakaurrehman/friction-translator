@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Prompt Management - Friction Language Translator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/prompts.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>LLM Prompt Management</h1>
+            <p class="subtitle">Configure LLM prompts for friction language translation</p>
+            <div class="model-info">
+                <span class="model-info-icon"><i class="fas fa-brain"></i></span>
+                <span>Using LLM for context-aware translations. Customize how the AI interprets different language patterns.</span>
+            </div>
+            <nav>
+                <a href="/"><i class="fas fa-arrow-left"></i> Back to Translator</a>
+            </nav>
+        </header>
+
+        <main>
+            <div class="prompt-slider-wrapper">
+              <button class="slider-btn prev-btn" aria-label="Scroll Left">‹</button>
+          
+              <div class="prompt-slider" id="promptsContainer">
+                <!-- Prompts will be injected here by prompts.js -->
+                <div class="loading">Loading prompts...</div>
+              </div>
+          
+              <button class="slider-btn next-btn" aria-label="Scroll Right">›</button>
+            </div>
+          </main>
+          
+
+        <!-- Add Rule Modal -->
+        <div id="addRuleModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Add New LLM Prompt</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="addRuleForm">
+                        <input type="hidden" id="addRuleType" name="promptType">
+                        
+                        <div class="prompt-help">
+                            <strong>LLM Prompt Tips:</strong>
+                            <ul>
+                                <li>Use <code>{text}</code> as a placeholder where you want to insert the user's text</li>
+                                <li>Include clear examples to guide the LLM's understanding</li>
+                                <li>Be specific about the transformation you want the LLM to make</li>
+                                <li>Instruct the LLM to return ONLY the transformed text without explanations</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="field">
+                            <label for="addRuleName">Context Name:</label>
+                            <input type="text" id="addRuleName" name="name" required>
+                            <div class="llm-hint">A descriptive name for this context (e.g., "high_optionality", "contrast", "exception")</div>
+                        </div>
+                        
+                        <div class="field">
+                            <label for="addRuleDescription">Description:</label>
+                            <textarea id="addRuleDescription" name="description" rows="2" required></textarea>
+                            <div class="llm-hint">Briefly describe when this prompt should be used</div>
+                        </div>
+                        
+                        <div class="field">
+                            <label for="addRulePrompt">LLM Prompt Template:</label>
+                            <textarea id="addRulePrompt" name="prompt" class="prompt-textarea" rows="10" required></textarea>
+                            <div class="llm-hint">The full prompt to be sent to the LLM. Use {text} where the original text should be inserted.</div>
+                        </div>
+                        
+                        <div class="field">
+                            <label>Example Transformation:</label>
+                            <div class="example-field">
+                                <label>From:</label>
+                                <input type="text" id="addRuleExampleFrom" name="exampleFrom" required>
+                            </div>
+                            <div class="example-field">
+                                <label>To:</label>
+                                <input type="text" id="addRuleExampleTo" name="exampleTo" required>
+                            </div>
+                            <div class="llm-hint">An example of how text should be transformed</div>
+                        </div>
+                        
+                        <div id="addTestContainer" style="display: none;">
+                            <div class="field">
+                                <label for="addTestText">Test with text:</label>
+                                <textarea id="addTestText" name="testText" rows="2"></textarea>
+                            </div>
+                            <button type="button" class="test-btn" onclick="testPrompt('add')">Test Prompt</button>
+                            <div id="addTestResult" class="test-result" style="display: none;">
+                                <div class="test-result-title">Result:</div>
+                                <div id="addTestResultContent"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="field" style="margin-top: 20px; display: flex; gap: 10px;">
+                            <button type="submit" class="save-btn">Save Prompt</button>
+                            <button type="button" class="cancel-btn" onclick="closeModal('addRuleModal')">Cancel</button>
+                            <button type="button" class="test-btn" onclick="showTestSection('add')">Try It</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Edit Rule Modal -->
+        <div id="editRuleModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Edit LLM Prompt</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="editRuleForm">
+                        <input type="hidden" id="editRuleType" name="promptType">
+                        <input type="hidden" id="editRuleName" name="ruleName">
+                        
+                        <div class="prompt-help">
+                            <strong>LLM Prompt Tips:</strong>
+                            <ul>
+                                <li>Use <code>{text}</code> as a placeholder where you want to insert the user's text</li>
+                                <li>Include clear examples to guide the LLM's understanding</li>
+                                <li>Be specific about the transformation you want the LLM to make</li>
+                                <li>Instruct the LLM to return ONLY the transformed text without explanations</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="field">
+                            <label for="editRuleDescription">Description:</label>
+                            <textarea id="editRuleDescription" name="description" rows="2" required></textarea>
+                            <div class="llm-hint">Briefly describe when this prompt should be used</div>
+                        </div>
+                        
+                        <div class="field">
+                            <label for="editRulePrompt">LLM Prompt Template:</label>
+                            <textarea id="editRulePrompt" name="prompt" class="prompt-textarea" rows="10" required></textarea>
+                            <div class="llm-hint">The full prompt to be sent to the LLM. Use {text} where the original text should be inserted.</div>
+                        </div>
+                        
+                        <div class="field">
+                            <label>Example Transformation:</label>
+                            <div class="example-field">
+                                <label>From:</label>
+                                <input type="text" id="editRuleExampleFrom" name="exampleFrom" required>
+                            </div>
+                            <div class="example-field">
+                                <label>To:</label>
+                                <input type="text" id="editRuleExampleTo" name="exampleTo" required>
+                            </div>
+                            <div class="llm-hint">An example of how text should be transformed</div>
+                        </div>
+                        
+                        <div id="editTestContainer" style="display: none;">
+                            <div class="field">
+                                <label for="editTestText">Test with text:</label>
+                                <textarea id="editTestText" name="testText" rows="2"></textarea>
+                            </div>
+                            <button type="button" class="test-btn" onclick="testPrompt('edit')">Test Prompt</button>
+                            <div id="editTestResult" class="test-result" style="display: none;">
+                                <div class="test-result-title">Result:</div>
+                                <div id="editTestResultContent"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="field" style="margin-top: 20px; display: flex; gap: 10px;">
+                            <button type="submit" class="save-btn">Save Changes</button>
+                            <button type="button" class="cancel-btn" onclick="closeModal('editRuleModal')">Cancel</button>
+                            <button type="button" class="test-btn" onclick="showTestSection('edit')">Try It</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- View Full Prompt Modal -->
+        <div id="viewPromptModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Full LLM Prompt</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <pre id="fullPromptContent" style="white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; background-color: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto;"></pre>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2025 Friction Language Translator - Enhanced with LLM Technology</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/prompts.js"></script>
+</body>
+</html>

@@ -1,0 +1,264 @@
+/* Friction Language Real-time Correction Styles */
+
+/* Friction highlighting in the editor */
+.friction-mark {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-decoration-style: wavy;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .friction-mark:hover {
+    background-color: rgba(255, 255, 255, 0.7);
+  }
+  
+  .friction-type-but {
+    text-decoration-color: #fd7e55;
+  }
+  
+  .friction-type-should {
+    text-decoration-color: #5f6be0;
+  }
+  
+  .friction-type-not {
+    text-decoration-color: #4caf50;
+  }
+  
+  /* Suggestion item styles */
+  .suggestion-item {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  
+  .suggestion-item:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+  }
+  
+  .suggestion-item-active {
+    border-color: #5f6be0;
+    box-shadow: 0 0 0 2px rgba(95, 107, 224, 0.2);
+  }
+  
+  .suggestion-item-removed {
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s;
+  }
+  
+  .suggestion-text {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  
+  .suggestion-text strong {
+    color: #333;
+    font-size: 14px;
+  }
+  
+  .suggestion-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  
+  .suggestion-action {
+    font-size: 12px;
+    padding: 6px 10px;
+    background: #f5f5f5;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+  
+  .suggestion-action:hover {
+    background: #e0e0e0;
+  }
+  
+  .suggestion-action-accept {
+    background: #eef0ff;
+    color: #5f6be0;
+  }
+  
+  .suggestion-action-accept:hover {
+    background: #d8dcfe;
+  }
+  
+  .suggestion-action-options {
+    background: #fff4ef;
+    color: #fd7e55;
+  }
+  
+  .suggestion-action-options:hover {
+    background: #ffe9df;
+  }
+  
+  /* Options container */
+  .options-container {
+    margin-top: 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+  }
+  
+  .options-loading {
+    text-align: center;
+    color: #666;
+    padding: 8px;
+    font-size: 13px;
+  }
+  
+  .options-loading i {
+    margin-right: 6px;
+  }
+  
+  .options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .option-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 10px 12px;
+    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+    transition: all 0.2s;
+  }
+  
+  .option-item:hover {
+    border-color: #d0d0d0;
+    background-color: #fafafa;
+  }
+  
+  .option-text {
+    flex: 1;
+    font-size: 13px;
+    color: #444;
+  }
+  
+  .option-accept-btn {
+    font-size: 12px;
+    padding: 4px 8px;
+    background: #eef0ff;
+    color: #5f6be0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  
+  .option-accept-btn:hover {
+    background: #d8dcfe;
+  }
+  
+  .analysis-loading {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-size: 14px;
+  }
+  
+  .analysis-loading i {
+    margin-right: 8px;
+    color: #5f6be0;
+  }
+  
+  .no-options {
+    text-align: center;
+    padding: 8px;
+    color: #666;
+    font-style: italic;
+    font-size: 13px;
+  }
+  
+  .no-suggestions {
+    color: #888;
+    font-style: italic;
+    text-align: center;
+    padding: 30px 15px;
+    font-size: 14px;
+    background: #f5f5f5;
+    border-radius: 8px;
+  }
+  
+  .error-message {
+    color: #fd7e55;
+    padding: 10px;
+    text-align: center;
+    font-size: 13px;
+    background: #fff4ef;
+    border-radius: 4px;
+  }
+  
+  /* Animation for items entering the list */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .suggestion-item {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .suggestion-actions {
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .suggestion-action {
+      width: 100%;
+      text-align: center;
+    }
+  }
+  /* Friction mark styles */
+    .friction-mark {
+    border-bottom: 2px dotted;
+    cursor: pointer;
+  }
+  
+  .friction-type-but {
+    border-bottom-color: #ff9800; /* Orange for "but" type */
+  }
+  
+  .friction-type-should {
+    border-bottom-color: #2196f3; /* Blue for "should" type */
+  }
+  
+  .friction-type-not {
+    border-bottom-color: #f44336; /* Red for "not" type */
+  }
+  
+  /* Animation for suggestion removal */
+  .suggestion-item-removed {
+    animation: fadeOut 0.3s forwards;
+  }
+  
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; transform: translateX(30px); }
+  }

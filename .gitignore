@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+env/
+.env
+
+# VSCode
+.vscode/
+
+# Azure API keys (never commit secrets!)
+config.py

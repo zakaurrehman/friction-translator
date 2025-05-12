@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friction Language Translator - Test Page</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .test-case {
+            margin-bottom: 40px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: white;
+        }
+        
+        .test-case h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .test-section {
+            margin-bottom: 15px;
+        }
+        
+        .test-section h4 {
+            margin-bottom: 5px;
+            font-size: 1rem;
+        }
+        
+        .comparison {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        
+        .comparison-col {
+            flex: 1;
+            padding: 10px;
+        }
+        
+        .comparison-col:first-child {
+            border-right: 1px solid #eee;
+        }
+        
+        .highlight-change {
+            background-color: #fff3cd;
+            border-bottom: 2px solid #ffc107;
+            padding: 0 2px;
+            border-radius: 2px;
+            position: relative;
+        }
+        
+        .highlight-add {
+            background-color: #d4edda;
+            border-bottom: 2px solid #28a745;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 15px;
+            background-color: #4a86e8;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+
+        .highlight-phrase {
+            background-color: #ffecb3;
+            padding: 0 2px;
+            border-radius: 2px;
+            font-weight: bold;
+        }
+
+        .subtext {
+            font-size: 0.8em;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Friction Language Translator Test Page</h1>
+            <p class="subtitle">Test cases for translator functionality</p>
+            <div class="model-info">
+                <span class="model-info-icon">🧠</span>
+                <span>Powered by GPT-4O LLM for context-aware translations</span>
+            </div>
+            <a href="/" class="back-link">Back to Translator</a>
+        </header>
+
+        <main>
+            {% for result in results %}
+            <div class="test-case">
+                <h3>Test Case</h3>
+                
+                <div class="comparison">
+                    <div class="comparison-col">
+                        <h4>Original Text:</h4>
+                        <div class="text-display">{{ result.original }}</div>
+                    </div>
+                    <div class="comparison-col">
+                        <h4>Translated Text:</h4>
+                        <div class="text-display">{{ result.translated }}</div>
+                    </div>
+                </div>
+                
+                <div class="test-section">
+                    <h4>Highlighted Changes:</h4>
+                    <div class="text-display">{{ result.highlighted | safe }}</div>
+                </div>
+                
+                {% if result.transformations %}
+                <div class="test-section">
+                    <h4>Specific Word Transformations:</h4>
+                    <table class="friction-words-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Original Text</th>
+                                <th>Replacement</th>
+                                <th>Context</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trans in result.transformations %}
+                            <tr>
+                                <td>
+                                    {{ trans.type | capitalize }}
+                                    {% if trans.pattern %}
+                                    <br><span class="subtext">({{ trans.pattern }})</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ trans.original }}</td>
+                                <td>{{ trans.replacement or '(Removed)' }}</td>
+                                <td class="context-cell">
+                                    {% if trans.context %}
+                                        {% set context = trans.context %}
+                                        {% if trans.original and trans.original in context %}
+                                            {% set highlighted_context = context.replace(trans.original, '<span class="highlight-phrase">' + trans.original + '</span>') %}
+                                            {{ highlighted_context | safe }}
+                                        {% else %}
+                                            {{ context }}
+                                        {% endif %}
+                                    {% else %}
+                                        (No context available)
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+                
+                {% if result.friction_words %}
+                <div class="test-section">
+                    <h4>Detected Friction Words:</h4>
+                    <table class="friction-words-table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Friction Word</th>
+                                <th>Replacement</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for word in result.friction_words %}
+                            <tr>
+                                <td>{{ word.type | capitalize }}</td>
+                                <td>{{ word.original }}</td>
+                                <td>{{ word.replacement }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Friction Language Translator - Enhanced with LLM Technology</p>
+        </footer>
+    </div>
+</body>
+</html>

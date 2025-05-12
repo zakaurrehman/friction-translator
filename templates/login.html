@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign In</title>
+  <!-- your main stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <style>
+    .login-container {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: var(--primary-light);
+    }
+    .login-card {
+      background: var(--surface-1);
+      padding: var(--spacing-6);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      max-width: 400px;
+      width: 100%;
+    }
+    .login-card h2 {
+      color: var(--primary-color);
+      font-size: 1.5rem;
+      margin-bottom: var(--spacing-4);
+      text-align: center;
+    }
+    .form-input {
+      width: 100%;
+      padding: var(--spacing-3);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--spacing-4);
+      font-size: 1rem;
+      color: var(--text-primary);
+      background-color: var(--white);
+      transition: var(--transition);
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px var(--blue-light);
+    }
+    .login-error {
+      background-color: var(--red-light);
+      color: var(--text-primary);
+      padding: var(--spacing-3);
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--spacing-4);
+      font-size: 0.9rem;
+      text-align: center;
+    }
+    .btn {
+      padding: var(--spacing-2) var(--spacing-4);
+      border-radius: var(--radius-pill);
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+    .primary-btn {
+      background-color: var(--primary-color);
+      color: var(--white);
+    }
+    .primary-btn:hover {
+      background-color: var(--primary-dark);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <h2>Enter Password</h2>
+      {% if error %}
+        <div class="login-error">{{ error }}</div>
+      {% endif %}
+      <form method="post">
+        <input
+          type="password"
+          name="password"
+          class="form-input"
+          placeholder="Password"
+          required
+          autofocus
+        />
+        <button type="submit" class="btn primary-btn">Log In</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
+
