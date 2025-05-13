@@ -111,7 +111,7 @@ function analyzeTextForFriction() {
     fetch('/translate', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ text, highlight: false })
+      body:    JSON.stringify({ text, highlight: true })
     })
     .then(res => {
       if (!res.ok) throw new Error(res.statusText);
@@ -120,42 +120,57 @@ function analyzeTextForFriction() {
     .then(data => {
       frictionWordsList.innerHTML = '';
       const points = [];
-
+      // ✅ Always prefer transformations
+      // if (Array.isArray(data.transformations)) {
+      //   data.transformations.forEach((tx, j) => {
+      //     const { idx, needle } = findIndexInText(text, tx.original);
+      //     if (idx < 0) return;
+      //     points.push({
+      //       id:         `tx-${j}`,
+      //       type:       tx.type,
+      //       start_pos:  idx,
+      //       end_pos:    idx + needle.length,
+      //       original:   needle,
+      //       replacement: tx.replacement,
+      //       suggestion:  `Replace "${needle}" → "${tx.replacement}".`
+      //     });
+      //   });
+      // }
       // A) friction_words loop
-      if (Array.isArray(data.friction_words)) {
-        data.friction_words.forEach((fw, i) => {
-          const { idx, needle } = findIndexInText(text, fw.original);
-          if (idx < 0) return;
-          points.push({
-            id:         `fw-${i}`,
-            type:       fw.type,
-            start_pos:  idx,
-            end_pos:    idx + needle.length,
-            original:   needle,
-            replacement: fw.replacement,
-            suggestion:  fw.replacement
-              ? `Consider replacing "${needle}" with "${fw.replacement}".`
-              : `Consider an alternative for "${needle}".`
-          });
-        });
-      }
+      // if (Array.isArray(data.friction_words)) {
+      //   data.friction_words.forEach((fw, i) => {
+      //     const { idx, needle } = findIndexInText(text, fw.original);
+      //     if (idx < 0) return;
+      //     points.push({
+      //       id:         `fw-${i}`,
+      //       type:       fw.type,
+      //       start_pos:  idx,
+      //       end_pos:    idx + needle.length,
+      //       original:   needle,
+      //       replacement: fw.replacement,
+      //       suggestion:  fw.replacement
+      //         ? `Consider replacing "${needle}" with "${fw.replacement}".`
+      //         : `Consider an alternative for "${needle}".`
+      //     });
+      //   });
+      // }
 
       // B) transformations loop
       if (Array.isArray(data.transformations)) {
         data.transformations.forEach((tx, j) => {
-          const { idx, needle } = findIndexInText(text, tx.original);
-          if (idx < 0) return;
+          // 💡 Instead of using findIndexInText, directly use the backend-provided original and replacement
           points.push({
             id:         `tx-${j}`,
             type:       tx.type,
-            start_pos:  idx,
-            end_pos:    idx + needle.length,
-            original:   needle,
+            start_pos:  null, // You can remove highlighting or use a simple marker if needed
+            end_pos:    null,
+            original:   tx.original,
             replacement: tx.replacement,
-            suggestion:  `Replace "${needle}" → "${tx.replacement}".`
+            suggestion:  `Replace "${tx.original}" → "${tx.replacement}".`
           });
         });
       }
+
 
       // C) no suggestions?
       if (points.length === 0) {
@@ -168,8 +183,8 @@ function analyzeTextForFriction() {
       }
 
       // D) dedupe & render
-      frictionPoints = removeOverlappingPoints(points);
-      processFrictionPoints();
+      frictionPoints = points;  // Skip removeOverlappingPoints since you're trusting backend fully
+      processFrictionPoints();  // This will now correctly render them
     })
     .catch(err => {
       console.error('Real-time translate error', err);

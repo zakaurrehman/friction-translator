@@ -51,8 +51,8 @@ class SentenceParser:
             return []
         
         # Normalize text
-        normalized_text = text.replace("'", "'").replace("'", "'")
-        normalized_text = normalized_text.replace(""", '"').replace(""", '"')
+        normalized_text = text.replace("’", "'").replace("‘", "'")
+        normalized_text = normalized_text.replace("“", '"').replace("”", '"')
         
         # Store all segments with their positions in original text
         segments_with_positions = []
