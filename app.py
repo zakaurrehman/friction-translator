@@ -296,156 +296,8 @@ def analyze_text():
             'friction_points': []
         }), 500
 
-@app.route('/check-coherence', methods=['POST'])
-def check_coherence():
-    """
-    Check for basic coherence issues in text
-    """
-    data = request.get_json()
-    text = data.get('text', '')
-    
-    app.logger.debug(f"Checking coherence for text: '{text}'...")
-    
-    # Placeholder for more sophisticated coherence checking
-    # In a real implementation, you would use more advanced NLP here
-    issues = []
-    
-    # Simple checks for repeated phrases
-    sentences = re.findall(r'[^.!?]+[.!?]+', text)
-    
-    for i in range(len(sentences) - 1):
-        current = sentences[i].strip().lower()
-        next_sent = sentences[i+1].strip().lower()
-        
-        # Check for repetition between sentences
-        current_words = current.split()[-3:] if len(current.split()) > 3 else current.split()
-        next_words = next_sent.split()[:3] if len(next_sent.split()) > 3 else next_sent.split()
-        
-        overlap = set(current_words) & set(next_words)
-        if len(overlap) >= 2:
-            position = {
-                'start': text.find(sentences[i]),
-                'end': text.find(sentences[i+1]) + len(sentences[i+1])
-            }
-            
-            issues.append({
-                'type': 'repetition',
-                'position': position,
-                'description': 'Repetition between sentences',
-                'suggestion': 'Consider rewording to avoid repeating the same words',
-                'sentences': [sentences[i], sentences[i+1]]
-            })
-    
-    # Check for strange patterns that might indicate coherence issues
-    strange_patterns = [
-        r'\b(and|but|yet) at the same time (and|but|yet) at the same time\b',
-        r'\b(aand|buut|yeet)\b',
-        r'\b(and|but) (and|but)\b',
-        r'\bit was (not )?very (good|bad) it was (not )?very (good|bad)\b'
-    ]
-    
-    for pattern in strange_patterns:
-        matches = re.finditer(pattern, text, re.IGNORECASE)
-        for match in matches:
-            issues.append({
-                'type': 'strange_pattern',
-                'position': {
-                    'start': match.start(),
-                    'end': match.end()
-                },
-                'description': 'Unusual word pattern detected',
-                'suggestion': 'This might be the result of multiple translations. Consider revising this section.',
-                'text': match.group(0)
-            })
-    
-    app.logger.debug(f"Found {len(issues)} coherence issues")
-    
-    return jsonify({
-        'success': True,
-        'issues': issues
-    })
 
-@app.route('/comprehensive-coherence', methods=['POST'])
-def comprehensive_coherence():
-    """
-    Perform a comprehensive coherence analysis on the entire text using Azure OpenAI
-    """
-    data = request.get_json()
-    text = data.get('text', '')
-    
-    app.logger.debug(f"Performing comprehensive coherence check for text: '{text}'...")
-    
-    # First call the basic check for immediate issues
-    basic_check_response = check_coherence()
-    basic_check = json.loads(basic_check_response.get_data(as_text=True))
-    issues = basic_check.get('issues', [])
-    
-    # If the text is substantial, use Azure OpenAI for more sophisticated analysis
-    if len(text.split()) > 30:
-        try:
-            # Create a prompt for Azure OpenAI
-            prompt = f"""
-            You are a specialized language coherence assistant. Analyze the following text which has been 
-            processed to remove friction language (words like "but", "should", and "not"). 
-            Check if the text flows naturally and makes logical sense after these transformations.
-            
-            Identify any issues with:
-            1. Sentence flow and transitions
-            2. Redundant phrases or words
-            3. Grammatical problems caused by transformations
-            4. Unclear pronoun references
-            5. Inconsistent tense or voice
-            
-            For each issue, provide:
-            - The specific text segment with the issue
-            - A brief description of the problem
-            - A suggested correction
-            
-            TEXT TO ANALYZE:
-            {text}
-            
-            Respond with a JSON object that contains an array of issues and an overall suggestion.
-            Each issue should have: type, text, description, suggestion, and if possible, position.
-            """
-            
-            # Initialize the Azure translator
-            translator = AzureTranslator(api_key=AZURE_OPENAI_API_KEY, endpoint=AZURE_OPENAI_ENDPOINT)
-            
-            # Get the response from Azure OpenAI
-            response = translator.call_azure_openai_api(prompt, max_tokens=400)
-            
-            # Parse the JSON response
-            try:
-                llm_analysis = json.loads(response)
-                
-                # If LLM found issues, add them to our list
-                if 'issues' in llm_analysis and isinstance(llm_analysis['issues'], list):
-                    issues.extend(llm_analysis['issues'])
-                
-                # Extract the overall suggestion
-                overall_suggestion = llm_analysis.get('overallSuggestion', "Consider reviewing the text for natural flow after friction language transformation.")
-                
-            except json.JSONDecodeError:
-                app.logger.warning(f"Unable to parse JSON from LLM response: {response}")
-                # Fallback suggestion if parsing fails
-                overall_suggestion = "Consider reviewing the text for overall coherence after changes."
-                
-        except Exception as e:
-            app.logger.error(f"Error in LLM coherence analysis: {str(e)}")
-            overall_suggestion = "Consider reviewing the text for natural flow after friction language transformation."
-    else:
-        # For short text, provide a simple suggestion
-        overall_suggestion = "The text is brief and likely maintains coherence after changes." if len(issues) == 0 else "Consider reviewing the short text for better flow."
-    
-    app.logger.debug(f"Comprehensive coherence check complete. Found {len(issues)} issues.")
-    
-    return jsonify({
-        'success': True,
-        'analysis': {
-            'issues': issues,
-            'overallSuggestion': overall_suggestion
-        }
-    })
+  # add this at the top of your file
 
 @app.route('/alternative-suggestions', methods=['POST'])
 def alternative_suggestions():
@@ -485,15 +337,20 @@ def alternative_suggestions():
         # Get the response from Azure OpenAI
         response = translator.call_azure_openai_api(prompt, max_tokens=200)
         
+        # Strip any Markdown fences (``` or ```json) before parsing
+        clean = response.strip()
+        clean = re.sub(r'^```(?:json)?\s*', '', clean)  # remove leading ```
+        clean = re.sub(r'```$', '', clean)             # remove trailing ```
+        
         # Parse the JSON response
         try:
-            alternatives = json.loads(response)
+            alternatives = json.loads(clean)
             
             # Ensure we have a valid list of alternatives
             if not isinstance(alternatives, list):
                 alternatives = ["and at the same time", "while also", "as well as"]
                 app.logger.warning(f"LLM response was not a list: {response}")
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, TypeError):
             app.logger.warning(f"Unable to parse JSON from LLM response: {response}")
             
             # Fallback alternatives based on friction type

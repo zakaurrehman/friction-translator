@@ -14,10 +14,12 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Track friction points in the text
   let frictionPoints = [];
+  let lastRawText = '';
   
   // Set up debounced text analysis
   let analysisTimeout;
   const ANALYSIS_DELAY = 2000; // ms
+   
   
   // Initialize
   if (inputText) {
@@ -25,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     inputText.addEventListener('input', function() {
       clearTimeout(analysisTimeout);
       
-      const text = this.innerText.trim();
+      const text = this.innerText;
       
       // Only analyze if we have at least 3 words
       if (text.split(/\s+/).length < 3) {
@@ -77,10 +79,11 @@ function findIndexInText(haystack, needle) {
   return { idx, needle };
 }
 
-let analyzeTimeout = null;
+  let analyzeTimeout = null;
 
-function analyzeTextForFriction() {
-  const raw = inputText.innerText.trim();
+async function analyzeTextForFriction() {
+  const raw = inputText.innerText;
+  lastRawText = raw;
   if (!raw) {
     frictionWordsList.innerHTML = '';
     emptyAnalysis.style.display = 'flex';
@@ -93,7 +96,7 @@ function analyzeTextForFriction() {
   liveSuggestions.style.display = 'block';
   frictionWordsList.innerHTML = `
     <div class="analysis-loading">
-      <i class="fas fa-spinner fa-spin"></i> Analyzing text…
+      <i class="fas fa-spinner fa-spin"></i> Analyzing text… 
     </div>`;
 
   clearTimeout(analyzeTimeout);
@@ -102,47 +105,56 @@ function analyzeTextForFriction() {
       const res = await fetch('/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: raw, highlight: false })
+        body: JSON.stringify({ text: raw, highlight: true })
       });
       if (!res.ok) throw new Error(res.statusText);
-      const data = await res.json();
+      const { transformations = [] } = await res.json();
 
-      // build our local list of points from data.transformations
-      // const points = (data.transformations || []).map((tx, i) => {
-      //   const { idx, needle } = findIndexInText(raw, tx.original);
-      //   if (idx < 0) return null;
-      //   return {
-      //     id: i,
-      //     type: tx.type,
-      //     start_pos: idx,
-      //     end_pos: idx + needle.length,
-      //     original: needle,
-      //     replacement: tx.replacement,
-      //     suggestion: `Replace "${needle}" → "${tx.replacement}".`
-      //   };
-      // }).filter(Boolean);
-      const points = (data.transformations || []).map((tx, i) => ({
-        id:           i,
-        type:         tx.type,
-        original:     tx.original,
-        replacement:  tx.replacement,
-        start_pos:    null,   // we’ll locate these by span, not by index
-        end_pos:      null,
-        suggestion:   `Replace "${tx.original}" → "${tx.replacement}".`
-      }));
+      const points = transformations.map((tx, i) => {
+        // 1) Try the LLM-provided offsets
+        let start = tx.start_offset  ?? tx.startOffset;
+        let end   = tx.end_offset    ?? tx.endOffset;
 
-      if (!points.length) {
-        frictionWordsList.innerHTML = `
-          <div class="no-suggestions" style="text-align:center; padding:20px; color:var(--text-tertiary);">
-            No suggestions found
-          </div>`;
-        return;
-      }
+        // 2) If they’re not valid, fall back to matching on tx.original
+        if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0) {
+          // strip any surrounding quotes/punctuation
+          let needle = tx.original
+            .trim()
+            .replace(/^["“‘'’]+|["”’]+$/g, '');
 
-      frictionPoints = points;
+          // try to find it (case-sensitive first)
+          let { idx, needle: matched } = findIndexInText(raw, needle);
+          if (idx < 0) {
+            // fallback to a lowercase search
+            const lowerRaw    = raw.toLowerCase();
+            const lowerNeedle = needle.toLowerCase();
+            idx = lowerRaw.indexOf(lowerNeedle);
+            matched = needle;
+          }
+          if (idx < 0) {
+            // give up on this one
+            return null;
+          }
+          start = idx;
+          end   = idx + matched.length;
+        }
+
+        return {
+          id:          i,
+          type:        tx.type,
+          original:    raw.slice(start, end),
+          replacement: tx.replacement,
+          start_pos:   start,
+          end_pos:     end,
+          suggestion:  `Replace "${raw.slice(start, end)}" → "${tx.replacement}".`
+        };
+      }).filter(Boolean);
+
+      // Now we’ll keep all of them
+      frictionPoints = removeOverlappingPoints(points);
       processFrictionPoints();
     }
-    catch(err) {
+    catch (err) {
       console.error('Real-time translate error', err);
       frictionWordsList.innerHTML = `
         <div class="error-message" style="text-align:center; padding:20px; color:var(--accent-color);">
@@ -151,24 +163,27 @@ function analyzeTextForFriction() {
     }
   }, 500);
 }
-
-
   
   /**
    * Process friction points (mark in text and display suggestions)
    */
-  function processFrictionPoints() {
-    const spinner = frictionWordsList.querySelector('.analysis-loading');
-    if (spinner) spinner.remove();
-    // Mark friction points in the text
-    markFrictionPointsInText();
-    
-    // Show suggestions in the panel
-    displaySuggestions();
-    
-    // Update suggestion count
-    updateSuggestionCount();
-  }
+ function processFrictionPoints() {
+  // clear spinner
+  const spinner = frictionWordsList.querySelector('.analysis-loading');
+  if (spinner) spinner.remove();
+
+  // restore original content (with <br> for newlines)
+  inputText.innerHTML = lastRawText.replace(/\n/g, '<br>');
+
+  // wrap each friction span
+  markFrictionPointsInText();
+
+  // then populate the sidebar
+  displaySuggestions();
+  updateSuggestionCount();
+}
+
+
   
   /**
    * Convert transformations format to friction points format
@@ -260,58 +275,39 @@ function analyzeTextForFriction() {
     // Re-sort by start position for display
     return result.sort((a, b) => a.start_pos - b.start_pos);
   }
-  
-  /**
-   * Mark friction points directly in the text editor
-   * Completely rewritten to properly handle HTML and avoid text corruption
-   */
-  function markFrictionPointsInText() {
-  if (!inputText || !frictionPoints.length) return;
+ function markFrictionPointsInText() {
+  if (!lastRawText || !frictionPoints.length) return;
 
-  // 1. Grab the full plain-text
-  const fullText = inputText.textContent;
-
-  // 2. Clear the editor
-  inputText.innerHTML = '';
-
+  const raw = lastRawText;
   let cursor = 0;
+  const container = document.createElement('div');
 
-  // 3. Sort points by their original index on the original text
-  const sorted = [...frictionPoints].sort((a, b) => {
-    const ai = fullText.indexOf(a.original, cursor);
-    const bi = fullText.indexOf(b.original, cursor);
-    return ai - bi;
-  });
+  // only underline the ones with real ranges
+  const toMark = frictionPoints
+    .filter(p => Number.isInteger(p.start_pos) && Number.isInteger(p.end_pos))
+    .sort((a, b) => a.start_pos - b.start_pos);
 
-  sorted.forEach(pt => {
-    const { original, replacement, id, type } = pt;
-    const idx = fullText.indexOf(original, cursor);
-    if (idx < 0) return;
-
-    // 4. Append any text up to this friction point
-    const before = fullText.slice(cursor, idx);
-    inputText.appendChild(document.createTextNode(before));
-
-    // 5. Create the highlighted span
+  toMark.forEach(pt => {
+    if (pt.start_pos > cursor) {
+      container.appendChild(
+        document.createTextNode(raw.slice(cursor, pt.start_pos))
+      );
+    }
     const span = document.createElement('span');
-    span.className = `friction-mark friction-type-${type}`;
-    span.dataset.frictionId  = id;
-    span.dataset.original    = original;
-    span.dataset.replacement = replacement;
-    span.textContent         = original;
-    inputText.appendChild(span);
-
-    cursor = idx + original.length;
+    span.className = `friction-mark friction-type-${pt.type}`;
+    span.dataset.frictionId  = pt.id;
+    span.textContent         = raw.slice(pt.start_pos, pt.end_pos);
+    container.appendChild(span);
+    cursor = pt.end_pos;
   });
 
-  // 6. Append any remaining text after the last point
-  if (cursor < fullText.length) {
-    inputText.appendChild(
-      document.createTextNode(fullText.slice(cursor))
+  if (cursor < raw.length) {
+    container.appendChild(
+      document.createTextNode(raw.slice(cursor))
     );
   }
 
-  // 7. Attach click handlers for each span
+  inputText.innerHTML = container.innerHTML.replace(/\n/g, '<br>');
   inputText.querySelectorAll('.friction-mark').forEach(span => {
     span.addEventListener('click', e => {
       e.stopPropagation();
@@ -319,6 +315,66 @@ function analyzeTextForFriction() {
     });
   });
 }
+
+
+
+  
+  /**
+   * Mark friction points directly in the text editor
+   * Completely rewritten to properly handle HTML and avoid text corruption
+   */
+// function markFrictionPointsInText() {
+//   if (!lastRawText || !frictionPoints.length) return;
+
+//   const raw = lastRawText;
+//   let cursor = 0;
+//   const container = document.createElement('div');
+
+//   // sort by start_pos ascending
+//   const sorted = frictionPoints.slice().sort((a, b) => a.start_pos - b.start_pos);
+
+//   sorted.forEach(pt => {
+//     // text before this friction
+//     if (pt.start_pos > cursor) {
+//       container.appendChild(
+//         document.createTextNode(raw.slice(cursor, pt.start_pos))
+//       );
+//     }
+//     // wrap the friction word(s)
+//     const span = document.createElement('span');
+//     span.className = `friction-mark friction-type-${pt.type}`;
+//     span.dataset.frictionId  = pt.id;
+//     span.dataset.original    = pt.original;
+//     span.dataset.replacement = pt.replacement;
+//     span.textContent         = raw.slice(pt.start_pos, pt.end_pos);
+//     container.appendChild(span);
+
+//     cursor = pt.end_pos;
+//   });
+
+//   // trailing text
+//   if (cursor < raw.length) {
+//     container.appendChild(
+//       document.createTextNode(raw.slice(cursor))
+//     );
+//   }
+
+//   // replace editor HTML and convert newlines → <br>
+//   inputText.innerHTML = container.innerHTML.replace(/\n/g, '<br>');
+
+//   // reattach click handlers
+//   inputText.querySelectorAll('.friction-mark').forEach(span => {
+//     span.addEventListener('click', e => {
+//       e.stopPropagation();
+//       highlightSuggestion(+span.dataset.frictionId);
+//     });
+//   });
+
+//   // for debugging
+//   console.log('After wrapping, spans:', document.querySelectorAll('.friction-mark'));
+// }
+
+
   
   /**
    * Display suggestions in the analysis panel
@@ -426,26 +482,31 @@ function analyzeTextForFriction() {
 //   markFrictionPointsInText();
 //   updateSuggestionCount();
 // }
-function acceptSuggestion(id) {
-  // 1) find exactly the <span> in the editor
-  const span = inputText.querySelector(
-    `.friction-mark[data-friction-id="${id}"]`
-  );
-  if (!span) return;  // nothing to replace
+ function acceptSuggestion(id) {
+  // 1) find our point & its span
+  const point = frictionPoints.find(p => p.id === id);
+  const span  = inputText.querySelector(`.friction-mark[data-friction-id="${id}"]`);
+  if (!point || !span) return;
 
-  // 2) swap it out for the corrected text
-  span.replaceWith(document.createTextNode(
-    frictionPoints.find(p=>p.id===id).replacement
-  ));
+  // 2) swap in the replacement, but *keep* the surrounding HTML intact
+  span.textContent = point.replacement;
 
-  // 3) remove that one point from the sidebar
-  frictionPoints = frictionPoints.filter(p=>p.id!==id);
+  // 3) “deactivate” that span so we won’t match it again
+  span.classList.remove('friction-mark', `friction-type-${point.type}`);
+  span.removeAttribute('data-friction-id');
+
+  // 4) remove that point from our array
+  frictionPoints = frictionPoints.filter(p => p.id !== id);
+
+  // 5) remove its card on the sidebar
   removeSuggestion(id);
 
-  // 4) re-highlight any *remaining* spans (no new API call!)
-  markFrictionPointsInText();
+  // 6) update the counter
   updateSuggestionCount();
 }
+
+
+
 
 
 
