@@ -158,7 +158,8 @@ TRANSFORMED SENTENCE:`
     // Function to update document title based on input
     if (inputText && docTitle) {
         inputText.addEventListener('input', function() {
-            const text = this.value.trim();
+            // Handle both contentEditable div and textarea
+            const text = this.innerText ? this.innerText.trim() : this.value.trim();
             if (text) {
                 // Get first line or first few words for the title
                 const firstLine = text.split('\n')[0];
@@ -181,7 +182,11 @@ TRANSFORMED SENTENCE:`
                 if (docTitle) docTitle.textContent = file.name;
                 
                 // Show loading state in the text area
-                inputText.value = "Loading document content...";
+                if (inputText.getAttribute('contenteditable') === 'true') {
+                    inputText.innerHTML = "Loading document content...";
+                } else {
+                    inputText.value = "Loading document content...";
+                }
                 if (emptyState) emptyState.style.display = 'none';
                 
                 // Here you would normally have server-side processing for document parsing
@@ -189,7 +194,11 @@ TRANSFORMED SENTENCE:`
                 if (file.type === "text/plain") {
                     const reader = new FileReader();
                     reader.onload = function(e) {
-                        inputText.value = e.target.result;
+                        if (inputText.getAttribute('contenteditable') === 'true') {
+                            inputText.innerHTML = e.target.result.replace(/\n/g, '<br>');
+                        } else {
+                            inputText.value = e.target.result;
+                        }
                         
                         // Trigger input event to analyze the text
                         const inputEvent = new Event('input', { bubbles: true });
@@ -200,7 +209,13 @@ TRANSFORMED SENTENCE:`
                     // For other file types, you'd typically send to the server for processing
                     // Simulating for the demo
                     setTimeout(() => {
-                        inputText.value = `Content extracted from ${file.name}.\n\nThis is a simulated content extraction for demo purposes. In a real implementation, the server would parse the document and extract the text content.`;
+                        const content = `Content extracted from ${file.name}.\n\nThis is a simulated content extraction for demo purposes. In a real implementation, the server would parse the document and extract the text content.`;
+                        
+                        if (inputText.getAttribute('contenteditable') === 'true') {
+                            inputText.innerHTML = content.replace(/\n/g, '<br>');
+                        } else {
+                            inputText.value = content;
+                        }
                         
                         // Trigger input event to analyze the text
                         const inputEvent = new Event('input', { bubbles: true });
@@ -214,7 +229,7 @@ TRANSFORMED SENTENCE:`
     // Add event listener for translate button
     if (translateBtn && inputText) {
         translateBtn.addEventListener('click', function() {
-          const text = inputText.innerText.trim();
+          const text = inputText.innerText ? inputText.innerText.trim() : inputText.value.trim();
           if (!text) return;
       
           // Button loading state
@@ -308,21 +323,12 @@ TRANSFORMED SENTENCE:`
             // Ignore button
             const actions = document.createElement('div');
             actions.className = 'suggestion-actions';
-            // const ignoreBtn = document.createElement('button');
-            // ignoreBtn.className = 'suggestion-action';
-            // ignoreBtn.textContent = 'Ignore';
-            // ignoreBtn.addEventListener('click', e => {
-            //   e.stopPropagation();
-            //   item.remove();
-            //   updateSuggestionCounts();
-            // });
-            // actions.appendChild(ignoreBtn);
       
             item.appendChild(actions);
             frictionWordsList.appendChild(item);
           });
         } else {
-          // no real transformations? show “none”
+          // no real transformations? show "none"
           frictionWordsList.innerHTML = `
             <div class="no-suggestions" style="text-align:center; padding:20px; color:var(--text-tertiary);">
               No suggestions found
@@ -348,9 +354,6 @@ TRANSFORMED SENTENCE:`
             proSuggestionCount.textContent = proItems;
         }
     }
-// expose to real-time script
-  // window.displayTranslationResults  = displayTranslationResults;
-  // window.updateSuggestionCounts     = updateSuggestionCounts;
 
     /**
      * Map friction type to a category
@@ -439,91 +442,95 @@ TRANSFORMED SENTENCE:`
                 // Focus on the text area
                 if (inputText) inputText.focus();
                 
-                // Get the current selection
-                let selectedText = '';
-                let selectionStart = inputText.selectionStart;
-                let selectionEnd = inputText.selectionEnd;
-                
-                if (selectionStart !== selectionEnd) {
-                    selectedText = inputText.value.substring(selectionStart, selectionEnd);
-                }
-                
-                // Apply basic formatting (this is a simple demo - in a real app you'd use contentEditable or a rich text editor)
-                if (selectedText) {
-                    let formattedText = selectedText;
-                    const buttonTitle = this.getAttribute('title').toLowerCase();
+                // Handle contentEditable vs textarea
+                if (inputText.getAttribute('contenteditable') === 'true') {
+                    // Use document.execCommand for contentEditable
+                    const command = this.dataset.cmd;
+                    document.execCommand(command, false, null);
+                } else {
+                    // Handle textarea formatting
+                    let selectedText = '';
+                    let selectionStart = inputText.selectionStart;
+                    let selectionEnd = inputText.selectionEnd;
                     
-                    // Apply formatting based on button type
-                    if (buttonTitle === 'bold') {
-                        formattedText = `**${selectedText}**`; // Markdown syntax for bold
-                    } else if (buttonTitle === 'italic') {
-                        formattedText = `*${selectedText}*`; // Markdown syntax for italic
-                    } else if (buttonTitle === 'bullet list') {
-                        // Split by line and add bullet points
-                        formattedText = selectedText.split('\n').map(line => `- ${line}`).join('\n');
-                    } else if (buttonTitle === 'numbered list') {
-                        // Split by line and add numbers
-                        formattedText = selectedText.split('\n').map((line, index) => `${index + 1}. ${line}`).join('\n');
+                    if (selectionStart !== selectionEnd) {
+                        selectedText = inputText.value.substring(selectionStart, selectionEnd);
                     }
                     
-                    // Replace the selected text with the formatted text
-                    const textBefore = inputText.value.substring(0, selectionStart);
-                    const textAfter = inputText.value.substring(selectionEnd);
-                    inputText.value = textBefore + formattedText + textAfter;
-                    
-                    // Reset selection to the new formatted text
-                    inputText.selectionStart = selectionStart;
-                    inputText.selectionEnd = selectionStart + formattedText.length;
-                    
-                    // Trigger input event to reanalyze
-                    const inputEvent = new Event('input', { bubbles: true });
-                    inputText.dispatchEvent(inputEvent);
+                    // Apply basic formatting (this is a simple demo - in a real app you'd use contentEditable or a rich text editor)
+                    if (selectedText) {
+                        let formattedText = selectedText;
+                        const buttonTitle = this.getAttribute('title').toLowerCase();
+                        
+                        // Apply formatting based on button type
+                        if (buttonTitle === 'bold') {
+                            formattedText = `**${selectedText}**`; // Markdown syntax for bold
+                        } else if (buttonTitle === 'italic') {
+                            formattedText = `*${selectedText}*`; // Markdown syntax for italic
+                        } else if (buttonTitle === 'bullet list') {
+                            // Split by line and add bullet points
+                            formattedText = selectedText.split('\n').map(line => `- ${line}`).join('\n');
+                        } else if (buttonTitle === 'numbered list') {
+                            // Split by line and add numbers
+                            formattedText = selectedText.split('\n').map((line, index) => `${index + 1}. ${line}`).join('\n');
+                        }
+                        
+                        // Replace the selected text with the formatted text
+                        const textBefore = inputText.value.substring(0, selectionStart);
+                        const textAfter = inputText.value.substring(selectionEnd);
+                        inputText.value = textBefore + formattedText + textAfter;
+                        
+                        // Reset selection to the new formatted text
+                        inputText.selectionStart = selectionStart;
+                        inputText.selectionEnd = selectionStart + formattedText.length;
+                    }
                 }
+                
+                // Trigger input event to reanalyze
+                const inputEvent = new Event('input', { bubbles: true });
+                inputText.dispatchEvent(inputEvent);
             });
         });
     }
 
     // Add event listener for clear button
-// Add event listener for clear button
     if (clearBtn) {
-  clearBtn.addEventListener('click', () => {
-    // 1) Clear the editor
-    if (inputText.getAttribute('contenteditable') === 'true') {
-      inputText.innerHTML = '';
-    } else {
-      inputText.value = '';
+        clearBtn.addEventListener('click', () => {
+            // 1) Clear the editor
+            if (inputText.getAttribute('contenteditable') === 'true') {
+                inputText.innerHTML = '';
+            } else {
+                inputText.value = '';
+            }
+
+            // 2) Clear out any displayed translations
+            if (originalText)   originalText.textContent   = '';
+            if (translatedText) translatedText.textContent = '';
+
+            // 3) Reset the document title
+            if (docTitle) docTitle.textContent = 'Untitled document';
+
+            // 4) Hide the results panel and show the empty‐state
+            if (resultsContainer)   resultsContainer.style.display   = 'none';
+            if (emptyState)         emptyState.style.display         = 'flex';
+            if (liveSuggestions)    liveSuggestions.style.display    = 'none';
+            if (emptyAnalysis)      emptyAnalysis.style.display      = 'flex';
+
+            // 5) Wipe out any friction cards & reset counts
+            if (frictionWordsList)  frictionWordsList.innerHTML      = '';
+            const suggestionCount     = document.getElementById('suggestionCount');
+            const proSuggestionCount  = document.getElementById('proSuggestionCount');
+            if (suggestionCount)     suggestionCount.textContent     = '0';
+            if (proSuggestionCount)  proSuggestionCount.textContent  = '0';
+
+            // 6) Reset file‐input so same file can be re‐uploaded
+            if (fileInput) fileInput.value = '';
+
+            // 7) Dispatch an input event so your real-time analyzer runs
+            const ev = new Event('input', { bubbles: true });
+            inputText.dispatchEvent(ev);
+        });
     }
-
-    // 2) Clear out any displayed translations
-    if (originalText)   originalText.textContent   = '';
-    if (translatedText) translatedText.textContent = '';
-
-    // 3) Reset the document title
-    if (docTitle) docTitle.textContent = 'Untitled document';
-
-    // 4) Hide the results panel and show the empty‐state
-    if (resultsContainer)   resultsContainer.style.display   = 'none';
-    if (emptyState)         emptyState.style.display         = 'flex';
-    if (liveSuggestions)    liveSuggestions.style.display    = 'none';
-    if (emptyAnalysis)      emptyAnalysis.style.display      = 'flex';
-
-    // 5) Wipe out any friction cards & reset counts
-    if (frictionWordsList)  frictionWordsList.innerHTML      = '';
-    const suggestionCount     = document.getElementById('suggestionCount');
-    const proSuggestionCount  = document.getElementById('proSuggestionCount');
-    if (suggestionCount)     suggestionCount.textContent     = '0';
-    if (proSuggestionCount)  proSuggestionCount.textContent  = '0';
-
-    // 6) Reset file‐input so same file can be re‐uploaded
-    if (fileInput) fileInput.value = '';
-
-    // 7) ***Dispatch an input event so your real-time analyzer runs***
-    const ev = new Event('input', { bubbles: true });
-    inputText.dispatchEvent(ev);
-  });
-}
-
-
 
     // Helper function to escape HTML
     function escapeHtml(str) {
@@ -582,15 +589,103 @@ TRANSFORMED SENTENCE:`
             });
         });
     }
-});
-document.addEventListener('DOMContentLoaded', () => {
-    const copyBtn    = document.getElementById('copyBtn');
-    const translated = document.getElementById('translatedText');
-    if (!copyBtn || !translated) return;
+
+    // Add copy icon to text area
+    function addCopyIconToTextArea() {
+        // Check if copy icon already exists
+        if (document.querySelector('.text-area-copy-btn')) return;
+        
+        const textareaContainer = document.querySelector('.textarea-container');
+        if (textareaContainer) {
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'text-area-copy-btn';
+            copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+            copyBtn.title = 'Copy text';
+            copyBtn.style.cssText = `
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid var(--border-color);
+                border-radius: var(--radius-sm);
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                font-size: 14px;
+                color: var(--text-secondary);
+                transition: all 0.2s ease;
+                z-index: 10;
+                opacity: 0;
+                pointer-events: none;
+            `;
+            
+            // Show/hide copy button based on content
+            function toggleCopyButton() {
+                const text = inputText.innerText ? inputText.innerText.trim() : inputText.value.trim();
+                if (text) {
+                    copyBtn.style.opacity = '1';
+                    copyBtn.style.pointerEvents = 'auto';
+                } else {
+                    copyBtn.style.opacity = '0';
+                    copyBtn.style.pointerEvents = 'none';
+                }
+            }
+            
+            // Copy functionality
+            copyBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const text = inputText.innerText ? inputText.innerText.trim() : inputText.value.trim();
+                if (!text) return;
+                
+                copyToClipboard(text)
+                    .then(() => {
+                        // Show success feedback
+                        this.innerHTML = '<i class="fas fa-check"></i>';
+                        this.style.color = 'var(--primary-color)';
+                        setTimeout(() => {
+                            this.innerHTML = '<i class="fas fa-copy"></i>';
+                            this.style.color = 'var(--text-secondary)';
+                        }, 1500);
+                    })
+                    .catch(err => {
+                        console.error('Copy failed:', err);
+                        alert('Failed to copy text to clipboard');
+                    });
+            });
+            
+            // Hover effects
+            copyBtn.addEventListener('mouseenter', function() {
+                this.style.background = 'rgba(95, 107, 224, 0.1)';
+                this.style.color = 'var(--primary-color)';
+                this.style.borderColor = 'var(--primary-color)';
+            });
+            
+            copyBtn.addEventListener('mouseleave', function() {
+                this.style.background = 'rgba(255, 255, 255, 0.9)';
+                this.style.color = 'var(--text-secondary)';
+                this.style.borderColor = 'var(--border-color)';
+            });
+            
+            textareaContainer.appendChild(copyBtn);
+            
+            // Listen for input changes to show/hide copy button
+            inputText.addEventListener('input', toggleCopyButton);
+            
+            // Initial check
+            toggleCopyButton();
+        }
+    }
+    
+    // Copy to clipboard utility function
     function copyToClipboard(text) {
         // 1) Preferred on secure contexts
         if (navigator.clipboard && window.isSecureContext) {
-          return navigator.clipboard.writeText(text);
+            return navigator.clipboard.writeText(text);
         }
         // 2) Fallback on HTTP
         const textarea = document.createElement('textarea');
@@ -602,86 +697,175 @@ document.addEventListener('DOMContentLoaded', () => {
         textarea.select();
         let success = false;
         try {
-          success = document.execCommand('copy');
+            success = document.execCommand('copy');
         } catch (err) {
-          console.error('Fallback copy failed', err);
+            console.error('Fallback copy failed', err);
         }
         document.body.removeChild(textarea);
         return success ? Promise.resolve() : Promise.reject();
-    }      
+    }
+    
+    // Initialize copy icon
+    addCopyIconToTextArea();
+});
 
-  
-    copyBtn.addEventListener('click', () => {
-      const text = translated.innerText.trim();
-      copyToClipboard(text)
-        .then(() => {
-          copyBtn.innerHTML = '<i class="fas fa-check"></i>';
-          setTimeout(() => {
-            copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
-          }, 1500);
-        })
-        .catch(console.error);
-    });
-  });  
-  document.addEventListener('DOMContentLoaded', () => {
-    const downloadBtn    = document.getElementById('downloadBtn');
-    const downloadForm   = document.getElementById('downloadForm');
-    const downloadInput  = document.getElementById('downloadTextInput');
-    const filenameInput  = document.getElementById('downloadFilenameInput');
-    const translated     = document.getElementById('translatedText');
-    const docTitle       = document.getElementById('docTitle');  // ← your header title
-  
-    if (downloadBtn && downloadForm && downloadInput && filenameInput && translated && docTitle) {
-      downloadBtn.addEventListener('click', e => {
-        e.preventDefault();
-  
-        const text = translated.innerText.trim();
-        if (!text) return;
-  
-        // grab the title from the header, e.g. "AUTO" or "Untitled document"
-        const rawName = docTitle.innerText.trim();
-        downloadInput.value = text;
-        filenameInput.value = rawName || 'translation';
-  
-        downloadForm.submit();
-      });
-    }
-  });
-  
-  document.addEventListener('DOMContentLoaded', () => {
-    const printBtn   = document.getElementById('printBtn');
+// Copy button functionality for results section
+document.addEventListener('DOMContentLoaded', () => {
+    const copyBtn = document.getElementById('copyBtn');
     const translated = document.getElementById('translatedText');
-  
-    if (printBtn && translated) {
-      printBtn.addEventListener('click', e => {
-        e.preventDefault();
-  
-        // Grab only the inner HTML of the translation body
-        const content = translated.innerHTML.trim();
-        if (!content) return;
-  
-        // Open a new tiny window
-        const win = window.open('', 'PrintWindow', 'width=600,height=400');
-        win.document.write(`
-          <html>
-            <head>
-              <title>Print Translation</title>
-              <style>
-                /* basic reset */
-                body { margin: 1rem; font-family: sans-serif; }
-                /* preserve your text-display styling if needed */
-                .text-display p { margin-bottom: 0.5em; }
-              </style>
-            </head>
-            <body>
-              ${content}
-            </body>
-          </html>
-        `);
-        win.document.close();
-        win.focus();
-        win.print();
-        win.close();
-      });
+    if (!copyBtn || !translated) return;
+    
+    function copyToClipboard(text) {
+        // 1) Preferred on secure contexts
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(text);
+        }
+        // 2) Fallback on HTTP
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.top = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        let success = false;
+        try {
+            success = document.execCommand('copy');
+        } catch (err) {
+            console.error('Fallback copy failed', err);
+        }
+        document.body.removeChild(textarea);
+        return success ? Promise.resolve() : Promise.reject();
     }
-  });
+
+    copyBtn.addEventListener('click', () => {
+        const text = translated.innerText.trim();
+        copyToClipboard(text)
+            .then(() => {
+                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    copyBtn.innerHTML = '<i class="fas fa-copy"></i>';
+                }, 1500);
+            })
+            .catch(console.error);
+    });
+});
+
+// Download Function - works with input text
+document.addEventListener('DOMContentLoaded', () => {
+    const downloadBtn = document.getElementById('downloadBtn');
+    const downloadForm = document.getElementById('downloadForm');
+    const downloadInput = document.getElementById('downloadTextInput');
+    const filenameInput = document.getElementById('downloadFilenameInput');
+    const inputText = document.getElementById('inputText');
+    const docTitle = document.getElementById('docTitle');
+
+    if (downloadBtn && downloadForm && downloadInput && filenameInput && inputText && docTitle) {
+        downloadBtn.addEventListener('click', e => {
+            e.preventDefault();
+
+            // Get the input text (handle both contentEditable and textarea)
+            const text = inputText.innerText ? inputText.innerText.trim() : inputText.value.trim();
+            if (!text) {
+                alert('Please enter some text before downloading.');
+                return;
+            }
+
+            // Grab the title from the header
+            const rawName = docTitle.innerText.trim();
+            downloadInput.value = text;
+            filenameInput.value = rawName || 'document';
+
+            downloadForm.submit();
+        });
+    }
+});
+
+// Print Function - works with input text
+document.addEventListener('DOMContentLoaded', () => {
+    const printBtn = document.getElementById('printBtn');
+    const inputText = document.getElementById('inputText');
+    const docTitle = document.getElementById('docTitle');
+
+    if (printBtn && inputText) {
+        printBtn.addEventListener('click', e => {
+            e.preventDefault();
+
+            // Get the input text HTML (handle both contentEditable and textarea)
+            let content;
+            if (inputText.getAttribute('contenteditable') === 'true') {
+                content = inputText.innerHTML.trim();
+            } else {
+                // For textarea, convert line breaks to HTML
+                content = inputText.value.trim().replace(/\n/g, '<br>');
+            }
+            
+            if (!content) {
+                alert('Please enter some text before printing.');
+                return;
+            }
+
+            // Get document title for the print window
+            const title = docTitle ? docTitle.innerText.trim() : 'Document';
+
+            // Open a new window for printing
+            const win = window.open('', 'PrintWindow', 'width=700,height=500');
+            win.document.write(`
+                <html>
+                    <head>
+                        <title>Print: ${title}</title>
+                        <style>
+                            /* Print-friendly styling */
+                            body { 
+                                margin: 2rem; 
+                                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                                font-size: 12pt;
+                                line-height: 1.6;
+                                color: #333;
+                            }
+                            
+                            h1 {
+                                font-size: 16pt;
+                                margin-bottom: 1rem;
+                                color: #000;
+                                border-bottom: 2px solid #333;
+                                padding-bottom: 0.5rem;
+                            }
+                            
+                            p { 
+                                margin-bottom: 0.8em; 
+                            }
+                            
+                            /* Remove any friction marks for clean printing */
+                            .friction-mark {
+                                border: none !important;
+                                background: transparent !important;
+                                color: inherit !important;
+                            }
+                            
+                            /* Print-specific styles */
+                            @media print {
+                                body { margin: 1cm; }
+                                h1 { page-break-after: avoid; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>${title}</h1>
+                        <div class="content">
+                            ${content}
+                        </div>
+                    </body>
+                </html>
+            `);
+            win.document.close();
+            win.focus();
+            
+            // Add a small delay to ensure content is loaded before printing
+            setTimeout(() => {
+                win.print();
+                win.close();
+            }, 250);
+        });
+    }
+});

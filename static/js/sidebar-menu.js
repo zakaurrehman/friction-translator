@@ -13,13 +13,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const newDocumentBtn = document.getElementById('newDocumentBtn');
     const clearBtn = document.getElementById('clearBtn');
     const inputText = document.getElementById('inputText');
-    const printBtn = document.getElementById('printBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
     const undoBtn = document.getElementById('undoBtn');
     const redoBtn = document.getElementById('redoBtn');
     const selectAllBtn = document.getElementById('selectAllBtn');
     const editorSettingsBtn = document.getElementById('editorSettingsBtn');
     const getProBtn = document.getElementById('getProBtn');
+    
+    // Get download and print buttons from sidebar
+    const sidebarPrintBtn = document.querySelector('.sidebar-item[id="printBtn"]');
+    const sidebarDownloadBtn = document.querySelector('.sidebar-item[id="downloadBtn"]');
     
     // Open menu when clicking the menu button
     if (menuButton) {
@@ -85,20 +87,165 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-  
     // Select All button in sidebar
     if (selectAllBtn && inputText) {
         selectAllBtn.addEventListener('click', function() {
-          // 1) close the sidebar first
-          closeSidebar();
-          // 2) wait for the sidebar to actually be hidden, then focus & select everything
-          //    adjust the delay (300ms) to match your CSS transition length, or use 0/requestAnimationFrame
-          setTimeout(() => {
-            inputText.focus();
-            inputText.setSelectionRange(0, inputText.value.length);
-          }, 300);
+            // Close the sidebar first
+            closeSidebar();
+            // Wait for the sidebar to actually be hidden, then focus & select everything
+            setTimeout(() => {
+                inputText.focus();
+                
+                // Handle both contentEditable and textarea
+                if (inputText.getAttribute('contenteditable') === 'true') {
+                    // For contentEditable div
+                    const range = document.createRange();
+                    range.selectNodeContents(inputText);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                } else {
+                    // For textarea
+                    inputText.setSelectionRange(0, inputText.value.length);
+                }
+            }, 300);
         });
-      }
+    }
+    
+    // Print button in sidebar - triggers input text printing
+    if (sidebarPrintBtn && inputText) {
+        sidebarPrintBtn.addEventListener('click', function() {
+            closeSidebar();
+            
+            // Wait for sidebar to close, then print
+            setTimeout(() => {
+                printInputText();
+            }, 300);
+        });
+    }
+    
+    // Download button in sidebar - triggers input text download
+    if (sidebarDownloadBtn && inputText) {
+        sidebarDownloadBtn.addEventListener('click', function() {
+            closeSidebar();
+            
+            // Wait for sidebar to close, then download
+            setTimeout(() => {
+                downloadInputText();
+            }, 300);
+        });
+    }
+    
+    // Function to print input text
+    function printInputText() {
+        const docTitle = document.getElementById('docTitle');
+        
+        // Get the input text HTML (handle both contentEditable and textarea)
+        let content;
+        if (inputText.getAttribute('contenteditable') === 'true') {
+            content = inputText.innerHTML.trim();
+        } else {
+            // For textarea, convert line breaks to HTML
+            content = inputText.value.trim().replace(/\n/g, '<br>');
+        }
+        
+        if (!content) {
+            createNotification('Print Error', 'Please enter some text before printing.');
+            return;
+        }
+
+        // Get document title for the print window
+        const title = docTitle ? docTitle.innerText.trim() : 'Document';
+
+        // Open a new window for printing
+        const win = window.open('', 'PrintWindow', 'width=700,height=500');
+        win.document.write(`
+            <html>
+                <head>
+                    <title>Print: ${title}</title>
+                    <style>
+                        /* Print-friendly styling */
+                        body { 
+                            margin: 2rem; 
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                            font-size: 12pt;
+                            line-height: 1.6;
+                            color: #333;
+                        }
+                        
+                        h1 {
+                            font-size: 16pt;
+                            margin-bottom: 1rem;
+                            color: #000;
+                            border-bottom: 2px solid #333;
+                            padding-bottom: 0.5rem;
+                        }
+                        
+                        p { 
+                            margin-bottom: 0.8em; 
+                        }
+                        
+                        /* Remove any friction marks for clean printing */
+                        .friction-mark {
+                            border: none !important;
+                            background: transparent !important;
+                            color: inherit !important;
+                        }
+                        
+                        /* Print-specific styles */
+                        @media print {
+                            body { margin: 1cm; }
+                            h1 { page-break-after: avoid; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>${title}</h1>
+                    <div class="content">
+                        ${content}
+                    </div>
+                </body>
+            </html>
+        `);
+        win.document.close();
+        win.focus();
+        
+        // Add a small delay to ensure content is loaded before printing
+        setTimeout(() => {
+            win.print();
+            win.close();
+        }, 250);
+        
+        createNotification('Print', 'Print dialog opened successfully.');
+    }
+    
+    // Function to download input text
+    function downloadInputText() {
+        const docTitle = document.getElementById('docTitle');
+        const downloadForm = document.getElementById('downloadForm');
+        const downloadInput = document.getElementById('downloadTextInput');
+        const filenameInput = document.getElementById('downloadFilenameInput');
+
+        // Get the input text (handle both contentEditable and textarea)
+        const text = inputText.innerText ? inputText.innerText.trim() : inputText.value.trim();
+        if (!text) {
+            createNotification('Download Error', 'Please enter some text before downloading.');
+            return;
+        }
+
+        if (!downloadForm || !downloadInput || !filenameInput) {
+            createNotification('Download Error', 'Download form not found. Please refresh the page.');
+            return;
+        }
+
+        // Grab the title from the header
+        const rawName = docTitle ? docTitle.innerText.trim() : 'document';
+        downloadInput.value = text;
+        filenameInput.value = rawName || 'document';
+
+        downloadForm.submit();
+        createNotification('Download', 'Document download started successfully.');
+    }
     
     // Editor Settings button
     if (editorSettingsBtn) {
@@ -116,6 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
             closeSidebar();
         });
     }
+    
     // Support button
     const supportBtn = document.getElementById('supportBtn');
     if (supportBtn) {
@@ -204,7 +352,9 @@ document.addEventListener('DOMContentLoaded', function() {
         closeButton.addEventListener('click', function() {
             notification.style.animation = 'notification-slide-out 0.3s ease-out forwards';
             setTimeout(() => {
-                notificationContainer.removeChild(notification);
+                if (notification.parentNode) {
+                    notificationContainer.removeChild(notification);
+                }
             }, 300);
         });
         
