@@ -48,6 +48,63 @@ body {
   flex-direction: column;
   overflow: hidden;
 }
+/* Footer background and padding */
+.footer {
+  display: flex;
+  align-items: center;
+  background-color: #f1f3f5;  /* light gray */
+  padding: 8px 16px;
+}
+
+/* Give each region equal flex so center stays centered */
+.footer-left,
+.footer-center,
+.footer-right {
+  flex: 1;
+}
+
+/* Center the format buttons group */
+.footer-center {
+  display: flex;
+  justify-content: center;
+}
+
+/* Surround the buttons with a pill-shaped background */
+.format-group {
+  display: flex;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  padding: 4px 8px;
+}
+
+/* Style each button */
+.format-btn {
+  background: transparent;
+  border: none;
+  margin: 0 6px;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background 0.2s ease, transform 0.1s ease;
+  cursor: pointer;
+}
+
+/* Icon color & size */
+.format-btn .fas {
+  color: #495057;
+  font-size: 18px;
+}
+
+/* Hover and active states */
+.format-btn:hover {
+  background: #e9ecef;
+  transform: scale(1.1);
+}
+
+.format-btn:active {
+  background: #dee2e6;
+  transform: scale(1.05);
+}
 
 /* Header styles */
 .header {
