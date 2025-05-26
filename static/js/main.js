@@ -484,28 +484,46 @@ TRANSFORMED SENTENCE:`
     }
 
     // Add event listener for clear button
+// Add event listener for clear button
     if (clearBtn) {
-        clearBtn.addEventListener('click', function() {
-            if (inputText) inputText.value = '';
-            if (originalText) originalText.textContent = '';
-            if (translatedText) translatedText.textContent = '';
-            if (docTitle) docTitle.textContent = 'Untitled document';
-            if (resultsContainer) resultsContainer.style.display = 'none';
-            if (emptyState) emptyState.style.display = 'flex';
-            if (fileInput) fileInput.value = ''; // Reset file input
-            
-            // Reset analysis panel
-            if (liveSuggestions) liveSuggestions.style.display = 'none';
-            if (emptyAnalysis) emptyAnalysis.style.display = 'flex';
-            
-            // Reset suggestion count
-            const suggestionCount = document.getElementById('suggestionCount');
-            if (suggestionCount) suggestionCount.textContent = '0';
-            
-            const proSuggestionCount = document.getElementById('proSuggestionCount');
-            if (proSuggestionCount) proSuggestionCount.textContent = '0';
-        });
+  clearBtn.addEventListener('click', () => {
+    // 1) Clear the editor
+    if (inputText.getAttribute('contenteditable') === 'true') {
+      inputText.innerHTML = '';
+    } else {
+      inputText.value = '';
     }
+
+    // 2) Clear out any displayed translations
+    if (originalText)   originalText.textContent   = '';
+    if (translatedText) translatedText.textContent = '';
+
+    // 3) Reset the document title
+    if (docTitle) docTitle.textContent = 'Untitled document';
+
+    // 4) Hide the results panel and show the empty‐state
+    if (resultsContainer)   resultsContainer.style.display   = 'none';
+    if (emptyState)         emptyState.style.display         = 'flex';
+    if (liveSuggestions)    liveSuggestions.style.display    = 'none';
+    if (emptyAnalysis)      emptyAnalysis.style.display      = 'flex';
+
+    // 5) Wipe out any friction cards & reset counts
+    if (frictionWordsList)  frictionWordsList.innerHTML      = '';
+    const suggestionCount     = document.getElementById('suggestionCount');
+    const proSuggestionCount  = document.getElementById('proSuggestionCount');
+    if (suggestionCount)     suggestionCount.textContent     = '0';
+    if (proSuggestionCount)  proSuggestionCount.textContent  = '0';
+
+    // 6) Reset file‐input so same file can be re‐uploaded
+    if (fileInput) fileInput.value = '';
+
+    // 7) ***Dispatch an input event so your real-time analyzer runs***
+    const ev = new Event('input', { bubbles: true });
+    inputText.dispatchEvent(ev);
+  });
+}
+
+
 
     // Helper function to escape HTML
     function escapeHtml(str) {

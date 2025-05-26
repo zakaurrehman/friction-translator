@@ -164,10 +164,23 @@ def translate():
         
         # Get the friction word replacements with prompts
         friction_words = text_processor.get_friction_replacements()
-        
-        # Get the specific transformations
         transformations = text_processor.get_specific_transformations()
-        
+
+# 1) Seed every transformation with the full‐document translation
+        for tx in transformations:
+            tx["original_sentence"]   = tx.get("context", input_text)
+            tx["translated_sentence"] = translated_text
+            tx["final_processed"]     = translated_text
+
+            # 2) If we have a per‐sentence match, override with that one
+            for ch in changes:
+                if ch["original"].strip() == tx.get("context", "").strip():
+                    tx["original_sentence"]   = ch["original"]
+                    tx["translated_sentence"] = ch["translated"]
+                    tx["final_processed"]     = ch["translated"]
+            break
+
+        app.logger.debug(f"Transformations: {transformations}")        
         app.logger.debug(f"Translation complete. Original: '{input_text}', Translated: '{translated_text}'")
         app.logger.debug(f"Changes: {changes}")
         app.logger.debug(f"Friction words: {friction_words}")

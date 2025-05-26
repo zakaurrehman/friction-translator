@@ -195,6 +195,9 @@ EXAMPLES:
 - "I hadn't hit a good shot" → "I failed to hit a good shot"
 - "I hadn't hit a good shot yet and I'm not going to be walking" → "I failed to hit a good shot yet and I'm going to be walking with slower pace"
 - "You shouldn't lie to me when I am not here" → "You shouldn't lie to me when I am elsewhere"
+- "I didn't see the message." → "I missed the message."
+- "The system didn't respond." → "The system failed to respond."
+- "I didn't like how she reacted." → "I was upset by how she reacted."
 
 INPUT SENTENCE:
 {text}
