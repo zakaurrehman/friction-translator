@@ -493,9 +493,26 @@ TRANSFORMED SENTENCE:`
         });
     }
 
-    // Add event listener for clear button
+    // Add this at the top of your main.js file to track ongoing requests
+    let currentAnalysisController = null; // For canceling ongoing API calls
+    let analysisTimeout = null; // For canceling debounced analysis
+
+    // Updated clear button event listener
     if (clearBtn) {
         clearBtn.addEventListener('click', () => {
+            // *** FIRST: Cancel any ongoing API calls and timeouts ***
+            if (currentAnalysisController) {
+                currentAnalysisController.abort();
+                currentAnalysisController = null;
+                console.log('Cancelled ongoing API request');
+            }
+            
+            if (analysisTimeout) {
+                clearTimeout(analysisTimeout);
+                analysisTimeout = null;
+                console.log('Cancelled pending analysis timeout');
+            }
+
             // 1) Clear the editor
             if (inputText.getAttribute('contenteditable') === 'true') {
                 inputText.innerHTML = '';
@@ -526,9 +543,11 @@ TRANSFORMED SENTENCE:`
             // 6) Reset file‐input so same file can be re‐uploaded
             if (fileInput) fileInput.value = '';
 
-            // 7) Dispatch an input event so your real-time analyzer runs
-            const ev = new Event('input', { bubbles: true });
-            inputText.dispatchEvent(ev);
+            // 7) *** REMOVED: Do NOT dispatch input event that triggers analysis ***
+            // const ev = new Event('input', { bubbles: true });
+            // inputText.dispatchEvent(ev);
+            
+            console.log('Reset completed - all API calls cancelled, UI cleared');
         });
     }
 
