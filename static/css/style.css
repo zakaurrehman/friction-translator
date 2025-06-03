@@ -94,7 +94,24 @@ body {
   color: #495057;
   font-size: 18px;
 }
+.friction-mark {
+  border-bottom: 2px dotted;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
 
+.friction-type-but { border-bottom-color: #ff9800; }
+.friction-type-should { border-bottom-color: #2196f3; }
+.friction-type-not { border-bottom-color: #f44336; }
+
+.suggestion-item-active {
+  background-color: rgba(95, 107, 224, 0.1);
+  border-color: #5f6be0;
+}
+
+.suggestion-item-removed {
+  animation: fadeOut 0.3s forwards;
+}
 /* Hover and active states */
 .format-btn:hover {
   background: #e9ecef;

@@ -233,106 +233,94 @@ TRANSFORMED SENTENCE:
         """
         Check if the text contains any negative constructions.
         Enhanced to catch all forms of negation patterns.
-        
-        Args:
-            text (str): Text to check
-            
-        Returns:
-            bool: True if text contains negation, False otherwise
         """
-        # First check for "not just/only...but" construction - skip processing if found
+
+        # ─── Normalize smart quotes → straight quotes ────────────────────────
+        text = text.replace("’", "'").replace("‘", "'")
+        text = text.replace("“", '"').replace("”", '"')
+        # ──────────────────────────────────────────────────────────────────────
+
+        # 1) If “not…just/only…but” skip it
         if self.is_not_just_but_construction(text):
             return False
-        
-        # Special case: If the text is just "No" or "No." as a standalone response, don't process it
+
+        # 2) Standalone “No” or “No.” skip
         if text.strip().lower() in ["no", "no."]:
             print(f"✅ Special case: Standalone 'No' response detected - will not process")
             return False
-        
-        # Special case: Yes/No response patterns where No is the answer
+
+        # 3) Yes/No answer patterns
         yes_no_patterns = [
-            r'^(yes|no)[\.\?]?$',  # Just "Yes" or "No" with optional punctuation
-            r'^(yes|no),',  # "Yes," or "No," starting a sentence
-            r'^(?:answer|response|replied|response is|answer is):\s*["\']?(no)["\']?[\.\?]?$',  # "Answer: No"
-            r'^(?:answer|response|replied|the answer)(?:\s+(?:is|was))?\s+["\']?(no)["\']?[\.\?]?$'  # "The answer is no"
+            r'^(yes|no)[\.\?]?$',
+            r'^(yes|no),',
+            r'^(?:answer|response|replied|response is|answer is):\s*["\']?(no)["\']?[\.\?]?$',
+            r'^(?:answer|response|replied|the answer)(?:\s+(?:is|was))?\s+["\']?(no)["\']?[\.\?]?$'
         ]
-        
         for pattern in yes_no_patterns:
             if re.search(pattern, text.strip().lower(), re.IGNORECASE):
                 matched = re.search(pattern, text.strip().lower(), re.IGNORECASE)
                 print(f"✅ Special case: Yes/No response pattern detected: '{matched.group(0)}' - will not process")
                 return False
-        
-        # Text should already be normalized at the TextProcessor level,
-        # but we'll normalize here as well for extra safety
-        normalized_text = text.replace("'", "'").lower()
-        
-        # Print the normalized text and all patterns for debugging
+
+        # 4) Now you can treat `text` as “normalized.” Continue with your contraction checks.
+        normalized_text = text.lower()
         print(f"Checking for negation in: '{normalized_text}'")
-        
-        # First, check for specific "cannot" patterns as they need special handling
-        for pattern in self.cannot_patterns:
+
+        # 5) Contraction patterns (flexible apostrophes)
+        contraction_patterns = [
+            r"\bisn[\'']t\b", r"\baren[\'']t\b", r"\bwasn[\'']t\b", r"\bweren[\'']t\b",
+            r"\bdoesn[\'']t\b", r"\bdon[\'']t\b", r"\bdidn[\'']t\b",
+            r"\bhasn[\'']t\b", r"\bhaven[\'']t\b", r"\bhadn[\'']t\b",
+            r"\bcan[\'']t\b", r"\bcouldn[\'']t\b", r"\bwon[\'']t\b", r"\bwouldn[\'']t\b",
+            r"\bshouldn[\'']t\b", r"\bmustn[\'']t\b", r"\bmightn[\'']t\b",
+            r"\bmayn[\'']t\b", r"\bain[\'']t\b",
+            # (You can keep or remove these duplicates at end if you want…
+            r"\bisn[\'']t", r"\baren[\'']t", r"\bwasn[\'']t", r"\bweren[\'']t\b",
+            r"\bdoesn[\'']t\b", r"\bdon[\'']t\b", r"\bdidn[\'']t\b",
+        ]
+
+        for pattern in contraction_patterns:
             match = re.search(pattern, normalized_text, re.IGNORECASE)
             if match:
-                matched_word = match.group(0)
-                print(f"✅ Cannot pattern matched: '{pattern}' found '{matched_word}' in text")
+                print(f"✅ Contraction pattern matched: '{pattern}' found '{match.group(0)}'")
                 return True
-        
-        # Check comprehensive negation patterns
+
+        # 6) Other “not” patterns
         for pattern in self.not_patterns:
             match = re.search(pattern, normalized_text, re.IGNORECASE)
             if match:
-                matched_word = match.group(0)
-                print(f"✅ Negative pattern matched: '{pattern}' found '{matched_word}' in text")
+                print(f"✅ Negative pattern matched: '{pattern}' found '{match.group(0)}'")
                 return True
-        
-        # Check for "need to" patterns (client requested handling this)
-        if re.search(r'\bwe need to\b', normalized_text, re.IGNORECASE):
-            print(f"✅ Negative pattern matched: 'we need to' in text")
-            return True
-            
-        # Check for special case "no" as determiner
-        if re.search(r'\bno\s+\w+', normalized_text, re.IGNORECASE):
-            print(f"✅ Negative pattern matched: 'no' as determiner in text")
-            return True
-            
-        # Additional check for complex negative expressions
-        complex_patterns = [
-            r'lack\s+of', r'absence\s+of', r'missing', r'fail(ed|s)?\s+to',
-            r'neither', r'nor', r'barely', r'hardly', r'scarcely', r'rarely'
+
+        # 7) Edge‐case “is not”, “do not”, etc.
+        edge_case_patterns = [
+            r'\bis\s+not\b', r'\bare\s+not\b', r'\bwas\s+not\b', r'\bwere\s+not\b',
+            r'\bdo\s+not\b', r'\bdoes\s+not\b', r'\bdid\s+not\b',
+            r'\bhave\s+not\b', r'\bhas\s+not\b', r'\bhad\s+not\b',
+            r'\bcould\s+not\b', r'\bwould\s+not\b', r'\bshould\s+not\b',
+            r'\bmust\s+not\b', r'\bmight\s+not\b', r'\bmay\s+not\b'
         ]
-        
-        for pattern in complex_patterns:
-            if re.search(pattern, normalized_text, re.IGNORECASE):
-                print(f"✅ Complex negative pattern matched: '{pattern}' in text")
+        for pattern in edge_case_patterns:
+            match = re.search(pattern, normalized_text, re.IGNORECASE)
+            if match:
+                print(f"✅ Edge case pattern matched: '{pattern}' found '{match.group(0)}'")
                 return True
-        
-        # Check for common negative phrases that might be missed
-        negative_phrases = [
-            r'different from what', r'remains unfinished', r'unsure',
-            r'below my best', r'declined', r'elsewhere', r'waiting to',
-            r'yet to'
-        ]
-        
-        for phrase in negative_phrases:
-            if re.search(phrase, normalized_text, re.IGNORECASE):
-                print(f"✅ Negative phrase matched: '{phrase}' in text")
-                return True
-        
+
         print(f"❌ No negative patterns found in text")
         return False
+
+
         
     def contains_negative_output(self, text):
         """
         Check if the translated output still contains negative constructions.
-        
-        Args:
-            text (str): Translated text to check
-            
-        Returns:
-            bool: True if text contains negative constructions, False otherwise
         """
-        normalized_text = text.replace("'", "'").lower()
+        # ─── Normalize curly quotes to straight quotes ────────────────────
+        text = text.replace("’", "'").replace("‘", "'")
+        text = text.replace("“", '"').replace("”", '"')
+        # ─────────────────────────────────────────────────────────────────
+
+        normalized_text = text.lower()
         
         # Special case: If the text is just "No" or "No." or Yes/No response, don't flag it
         if normalized_text.strip() in ["no", "no."]:
@@ -360,6 +348,7 @@ TRANSFORMED SENTENCE:
                 
         return False
 
+
     def _tokenize_text(self, text):
         """Split text into tokens for comparison."""
         return re.findall(r'\b[\w\'-]+\b|\S', text)
@@ -380,7 +369,11 @@ TRANSFORMED SENTENCE:
         if not text:
             return text
         
-        # Only process if text contains negation patterns
+        # ─── Normalize curly quotes → straight quotes ────────────────────
+        text = text.replace("’", "'").replace("‘", "'")
+        text = text.replace("“", '"').replace("”", '"')
+        # ─────────────────────────────────────────────────────────────────
+
         print(f"NOT Translator checking: '{text}'")
         if not self.contains_negation(text):
             print(f"NOT Translator: No negation found, returning original text")
@@ -392,6 +385,12 @@ TRANSFORMED SENTENCE:
         negation_count = 0
         for pattern in self.not_patterns:
             negation_count += len(re.findall(pattern, text, re.IGNORECASE))
+            
+        # Also count cannot patterns
+        for pattern in self.cannot_patterns:
+            negation_count += len(re.findall(pattern, text, re.IGNORECASE))
+            
+        print(f"NOT Translator: Found {negation_count} negation(s) in the text")
             
         # Also count cannot patterns
         for pattern in self.cannot_patterns:

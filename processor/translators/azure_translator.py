@@ -210,19 +210,27 @@ class AzureTranslator:
     def fix_punctuation_spacing(self, text):
         if not text:
             return text
-        # Remove any spaces around commas in numbers (including non-breaking spaces)
+
+        # 1) Re‐merge numbers separated by commas (e.g., “10,000”)
         fixed_text = re.sub(r'(\d+)[\s\u00A0]*,[\s\u00A0]*(\d+)', r'\1,\2', text)
 
-        # Remove extra spaces after commas when followed by a digit (e.g., "10, 000" → "10,000")
-        fixed_text = re.sub(r',\s+', ',', fixed_text)
-
-
+        # 2) Remove spaces **before** punctuation
         fixed_text = re.sub(r'\s+\.', '.', fixed_text)
         fixed_text = re.sub(r'\s+,', ',', fixed_text)
         fixed_text = re.sub(r'\s+;', ';', fixed_text)
         fixed_text = re.sub(r'\s+:', ':', fixed_text)
         fixed_text = re.sub(r'\s+\?', '?', fixed_text)
         fixed_text = re.sub(r'\s+!', '!', fixed_text)
+
+        # 3) Add a space **after** each punctuation if it’s not followed by space/digit
+        fixed_text = re.sub(r',(?=[^\s\d])', ', ', fixed_text)
+        fixed_text = re.sub(r'\.(?=[^\s\d])', '. ', fixed_text)
+        fixed_text = re.sub(r';(?=\S)', '; ', fixed_text)
+        fixed_text = re.sub(r':(?=\S)', ': ', fixed_text)
+        fixed_text = re.sub(r'!(?=\S)', '! ', fixed_text)
+        fixed_text = re.sub(r'\?(?=\S)', '? ', fixed_text)
+
+        # 4) Tighten up parentheses/brackets/quotes spacing
         fixed_text = re.sub(r'\s+\)', ')', fixed_text)
         fixed_text = re.sub(r'\(\s+', '(', fixed_text)
         fixed_text = re.sub(r'\s+\]', ']', fixed_text)
@@ -232,13 +240,17 @@ class AzureTranslator:
         fixed_text = re.sub(r'\s+\'', '\'', fixed_text)
         fixed_text = re.sub(r'\s+"', '"', fixed_text)
         fixed_text = re.sub(r'"\s+', '"', fixed_text)
+
+        # 5) Ellipsis and dashes
         fixed_text = re.sub(r'\s+\.\.\.', '...', fixed_text)
         fixed_text = re.sub(r'\s+--', '--', fixed_text)
         fixed_text = re.sub(r'--\s+', '--', fixed_text)
+
+        # 6) Collapse multiple spaces into one
         fixed_text = re.sub(r'\s{2,}', ' ', fixed_text)
-        fixed_text = re.sub(r'\s+\.', '.', fixed_text)
-        fixed_text = re.sub(r'\s+,', ',', fixed_text)
+
         return fixed_text.strip()
+
 
 # Example usage
 if __name__ == "__main__":

@@ -131,15 +131,22 @@ def translate():
     """
     Process the text using Azure OpenAI-based translators and return the translated version.
     """
-    # Get input text
     data = request.get_json()
-    input_text = data.get('text', '')
-    highlight = data.get('highlight', False)  # Parameter to request highlighting
+    raw_text = data.get('text', '')
+    highlight = data.get('highlight', False)
     
-    app.logger.debug(f"Received text for translation: {repr(input_text)}")
-    app.logger.debug(f"Highlight requested: {highlight}")
-    
-    if not input_text:
+    # ─── Normalize all curly quotes → straight quotes ───────────────────
+    normalized_input = (
+        raw_text
+        .replace("’", "'")
+        .replace("‘", "'")
+        .replace("“", '"')
+        .replace("”", '"')
+    )
+    app.logger.debug(f"Normalized input: {repr(normalized_input)}")
+    # ─────────────────────────────────────────────────────────────────────
+
+    if not normalized_input:
         app.logger.warning("Empty text received")
         return jsonify({
             'original': '',
@@ -149,30 +156,28 @@ def translate():
             'transformations': [],
             'highlighted': ''
         })
-    
+
     try:
-        # Process the text with text_processor
         app.logger.debug("Processing text with Azure OpenAI-based text_processor")
         
         if highlight:
-            # Use the version with highlighting
-            translated_text, changes, highlighted_text = text_processor.process_text(input_text, highlight_changes=True)
+            # Pass normalized_input into process_text(...)
+            translated_text, changes, highlighted_text = text_processor.process_text(
+                normalized_input, highlight_changes=True
+            )
         else:
-            # Use the standard version
-            translated_text, changes = text_processor.process_text(input_text)
+            translated_text, changes = text_processor.process_text(normalized_input)
             highlighted_text = None
         
-        # Get the friction word replacements with prompts
-        friction_words = text_processor.get_friction_replacements()
-        transformations = text_processor.get_specific_transformations()
+        friction_words   = text_processor.get_friction_replacements()
+        transformations  = text_processor.get_specific_transformations()
 
-# 1) Seed every transformation with the full‐document translation
+        # For each transformation, set the sentences so the front end can precisely highlight:
         for tx in transformations:
-            tx["original_sentence"]   = tx.get("context", input_text)
+            tx["original_sentence"]   = tx.get("context", normalized_input)
             tx["translated_sentence"] = translated_text
             tx["final_processed"]     = translated_text
 
-            # 2) If we have a per‐sentence match, override with that one
             for ch in changes:
                 if ch["original"].strip() == tx.get("context", "").strip():
                     tx["original_sentence"]   = ch["original"]
@@ -180,30 +185,30 @@ def translate():
                     tx["final_processed"]     = ch["translated"]
             break
 
-        app.logger.debug(f"Transformations: {transformations}")        
-        app.logger.debug(f"Translation complete. Original: '{input_text}', Translated: '{translated_text}'")
+        app.logger.debug(f"Transformations: {transformations}")
+        app.logger.debug(f"Translation complete. Original: '{normalized_input}', Translated: '{translated_text}'")
         app.logger.debug(f"Changes: {changes}")
         app.logger.debug(f"Friction words: {friction_words}")
         app.logger.debug(f"Transformations: {transformations}")
-        
-        # Return results with optional highlighting
+
         result = {
-            'original': input_text,
+            # Return the normalized_input (with straight apostrophes) as “original”:
+            'original': normalized_input,
             'translated': translated_text,
             'changes': changes,
             'friction_words': friction_words,
             'transformations': transformations
         }
         
-        if highlighted_text:
+        if highlighted_text is not None:
             result['highlighted'] = highlighted_text
         
         return jsonify(result)
+
     except Exception as e:
         app.logger.error(f"Error during translation: {str(e)}")
-        # Return error response
         return jsonify({
-            'original': input_text,
+            'original': normalized_input,
             'translated': f"Error: {str(e)}",
             'changes': [],
             'friction_words': [],
@@ -211,95 +216,94 @@ def translate():
             'highlighted': ''
         }), 500
 
+
 @app.route('/analyze-text', methods=['POST'])
 def analyze_text():
     """Analyze text for friction language and return friction points for real-time display"""
     data = request.get_json()
-    text = data.get('text', '')
-    
-    app.logger.debug(f"Received text for analysis: '{text}'...")
-    
-    if not text:
+    raw_text = data.get('text', '')
+
+    # ─── Normalize all curly quotes → straight quotes ───────────────────
+    normalized_text = (
+        raw_text
+        .replace("’", "'")
+        .replace("‘", "'")
+        .replace("“", '"')
+        .replace("”", '"')
+    )
+    app.logger.debug(f"Normalized text for analysis: '{normalized_text}'")
+
+    if not normalized_text:
         app.logger.warning("Empty text received for analysis")
         return jsonify({
             'success': True,
             'friction_points': []
         })
-    
+
     try:
-        # Process sentences
         from processor.sentence_parser import SentenceParser
         sentence_parser = SentenceParser()
-        sentences = sentence_parser.parse(text)
-        
+        sentences = sentence_parser.parse(normalized_text)
+
         friction_points = []
         sentence_start = 0
-        
-        # Process each sentence to find friction points
+
         for sentence in sentences:
-            # Skip empty sentences
             if not sentence.strip():
                 sentence_start += len(sentence)
                 continue
-            
-            # Check for different types of friction language
+
             # 1. Check for "but/yet" friction
             but_matches = []
             for pattern in text_processor.but_patterns:
-                matches = re.finditer(pattern, sentence, re.IGNORECASE)
-                for match in matches:
+                for match in re.finditer(pattern, sentence, re.IGNORECASE):
                     but_matches.append({
                         'type': 'but',
                         'start_pos': sentence_start + match.start(),
-                        'end_pos': sentence_start + match.end(),
-                        'original': match.group(0),
+                        'end_pos':   sentence_start + match.end(),
+                        'original':  match.group(0),
                         'replacement': 'and at the same time',
                         'suggestion': 'Consider replacing "but" with "and at the same time" to give equal weight to both points'
                     })
-            
+
             # 2. Check for "should/could/would" friction
             should_matches = []
             for pattern in text_processor.should_patterns:
-                matches = re.finditer(pattern, sentence, re.IGNORECASE)
-                for match in matches:
+                for match in re.finditer(pattern, sentence, re.IGNORECASE):
                     should_matches.append({
                         'type': 'should',
                         'start_pos': sentence_start + match.start(),
-                        'end_pos': sentence_start + match.end(),
-                        'original': match.group(0),
+                        'end_pos':   sentence_start + match.end(),
+                        'original':  match.group(0),
                         'replacement': 'might',
                         'suggestion': 'Consider using "might" instead of "should" to reduce the sense of obligation'
                     })
-            
+
             # 3. Check for "not/never" friction
             not_matches = []
             for pattern in text_processor.not_patterns:
-                matches = re.finditer(pattern, sentence, re.IGNORECASE)
-                for match in matches:
+                for match in re.finditer(pattern, sentence, re.IGNORECASE):
                     not_matches.append({
                         'type': 'not',
                         'start_pos': sentence_start + match.start(),
-                        'end_pos': sentence_start + match.end(),
-                        'original': match.group(0),
+                        'end_pos':   sentence_start + match.end(),
+                        'original':  match.group(0),
                         'replacement': 'positive alternative',
                         'suggestion': 'Consider replacing "not" with a positive alternative'
                     })
-            
-            # Combine all matches
+
             friction_points.extend(but_matches)
             friction_points.extend(should_matches)
             friction_points.extend(not_matches)
-            
-            # Update sentence start position for next sentence
+
             sentence_start += len(sentence)
-        
+
         app.logger.debug(f"Analysis complete. Found {len(friction_points)} friction points")
-        
         return jsonify({
             'success': True,
             'friction_points': friction_points
         })
-        
+
     except Exception as e:
         app.logger.error(f"Error analyzing text: {str(e)}")
         app.logger.error(traceback.format_exc())
@@ -308,6 +312,7 @@ def analyze_text():
             'error': str(e),
             'friction_points': []
         }), 500
+
 
 
   # add this at the top of your file
