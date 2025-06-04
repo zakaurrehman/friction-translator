@@ -168,6 +168,196 @@ body {
   background-color: var(--primary-color);
   border-radius: var(--radius-sm);
 }
+/* Enhanced no suggestions state */
+.no-suggestions {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-tertiary);
+}
+
+.no-suggestions-icon {
+  font-size: 48px;
+  color: #4CAF50;
+  margin-bottom: 16px;
+  opacity: 0.8;
+}
+
+.no-suggestions-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.no-suggestions-text {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Enhanced error state */
+.error-message {
+  text-align: center;
+  padding: 30px 20px;
+  background: linear-gradient(135deg, #ffebee, #ffcdd2);
+  border-radius: 8px;
+  margin: 15px;
+}
+
+.error-icon {
+  font-size: 36px;
+  color: #f44336;
+  margin-bottom: 12px;
+}
+
+.error-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #d32f2f;
+  margin-bottom: 8px;
+}
+
+.error-text {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.error-retry-btn {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.error-retry-btn:hover {
+  background: #d32f2f;
+}
+
+/* Enhanced friction mark styles */
+.friction-mark {
+  position: relative;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.friction-mark:hover {
+  background-color: rgba(95, 107, 224, 0.15) !important;
+}
+
+/* Enhanced suggestion item animations */
+.suggestion-item {
+  transition: all 0.3s ease;
+}
+
+.suggestion-item-active {
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  border-left-color: #2196f3 !important;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+}
+
+.suggestion-item-removed {
+  animation: slideOut 0.3s ease forwards;
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+    max-height: 200px;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+    max-height: 0;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* Enhanced loading state */
+.analysis-loading {
+  text-align: center;
+  padding: 30px;
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  border-radius: 8px;
+  margin: 15px;
+}
+
+.analysis-loading i {
+  font-size: 24px;
+  color: #4caf50;
+  margin-right: 12px;
+}
+
+/* Enhanced options styling */
+.options-list {
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 12px;
+}
+
+.option-item {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.option-item:hover {
+  background: #e9ecef;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.option-text {
+  flex: 1;
+  margin-right: 12px;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.option-accept-btn {
+  background: linear-gradient(135deg, #4caf50, #45a049);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.option-accept-btn:hover {
+  background: linear-gradient(135deg, #45a049, #3d8b40);
+  transform: translateY(-1px);
+}
+
+/* Better friction mark visibility */
+.friction-type-but {
+  border-bottom: 2px dotted #ff9800;
+  background-color: rgba(255, 152, 0, 0.1);
+}
+
+.friction-type-should {
+  border-bottom: 2px dotted #2196f3;
+  background-color: rgba(33, 150, 243, 0.1);
+}
+
+.friction-type-not {
+  border-bottom: 2px dotted #f44336;
+  background-color: rgba(244, 67, 54, 0.1);
+}
 
 .logo-text {
   font-weight: 600;

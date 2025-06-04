@@ -13,35 +13,33 @@
 </head>
 <body>
     <!-- Header -->
-    
     <div class="header">
         <div class="logo">
-        <button class="menu-button" id="menuButton">
-            <i class="fas fa-bars"></i>
-        </button>
-        <div class="logo-wrapper">
-            <div class="logo-icon">
-            <i class="fas fa-language"></i>
+            <button class="menu-button" id="menuButton">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="logo-wrapper">
+                <div class="logo-icon">
+                    <i class="fas fa-language"></i>
+                </div>
+                <span class="logo-text">Friction Translator</span>
             </div>
-            <span class="logo-text">Friction Translator</span>
-        </div>
         </div>
         <div class="doc-title" id="docTitle">Untitled document</div>
         <div class="actions">
             <button id="clearBtn" class="btn secondary-btn">
-              <i class="fas fa-undo-alt"></i>
-              Reset
+                <i class="fas fa-undo-alt"></i>
+                Reset
             </button>
-          
+            
             {% if session.get('logged_in') %}
-              <a href="{{ url_for('logout') }}" class="btn secondary-btn logout-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                Logout
-              </a>
+                <a href="{{ url_for('logout') }}" class="btn secondary-btn logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
             {% endif %}
-          </div>          
+        </div>          
     </div>
-  
 
     <!-- Main Content -->
     <div class="main-content">
@@ -52,13 +50,13 @@
                     <div id="contentArea">
                         <div class="textarea-container">
                             <div
-                              id="inputText"
-                              class="rich-editor"
-                              contenteditable="true"
-                              placeholder="Write or paste your text with friction language here..."
+                                id="inputText"
+                                class="rich-editor"
+                                contenteditable="true"
+                                placeholder="Write or paste your text with friction language here..."
                             ></div>
                             <div class="placeholder">Write or paste your text with friction language here...</div>
-                          </div>                          
+                        </div>                          
                         
                         <div class="file-upload">
                             <label for="fileInput" class="file-upload-btn">
@@ -79,32 +77,32 @@
 
                     <div class="results-container" id="resultsContainer" style="display: none;">
                         <div class="results-heading" style="display: flex; align-items: center; justify-content: space-between;">
-                          <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <i class="fas fa-check-circle"></i>
-                            <span>Translation Complete</span>
-                          </div>
-                          <div class="results-actions">
-                            <button id="copyBtn" class="icon-btn copy-btn" title="Copy translated text">
-                              <i class="fas fa-copy"></i>
-                            </button>
-                            <button id="downloadBtn" class="icon-btn" title="Download as document">
-                              <i class="fas fa-download"></i>
-                            </button>
-                            <button id="printBtn" class="icon-btn" title="Print">
-                              <i class="fas fa-print"></i>
-                            </button>
-                          </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Translation Complete</span>
+                            </div>
+                            <div class="results-actions">
+                                <button id="copyBtn" class="icon-btn copy-btn" title="Copy translated text">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                <button id="downloadBtn" class="icon-btn" title="Download as document">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                <button id="printBtn" class="icon-btn" title="Print">
+                                    <i class="fas fa-print"></i>
+                                </button>
+                            </div>
                         </div>
                         
                         <div class="text-section">
-                          <div class="text-section-title">
-                            <i class="fas fa-language"></i>
-                            <span>Improved Text</span>
-                          </div>
-                          <div id="tcLoader" class="loader" style="display:none;"></div>
-                          <div id="translatedText" class="text-display"></div>
+                            <div class="text-section-title">
+                                <i class="fas fa-language"></i>
+                                <span>Improved Text</span>
+                            </div>
+                            <div id="tcLoader" class="loader" style="display:none;"></div>
+                            <div id="translatedText" class="text-display"></div>
                         </div>
-                      </div>                      
+                    </div>                      
                 </div>
             </div>
 
@@ -169,19 +167,10 @@
                         
                         <div class="category-tabs">
                             <div class="category-tab active" data-category="all">All</div>
-                            <!-- <div class="category-tab" data-category="but">But/Yet</div>
+                            <!-- Additional category tabs can be uncommented as needed:
+                            <div class="category-tab" data-category="but">But/Yet</div>
                             <div class="category-tab" data-category="should">Should/Could</div>
                             <div class="category-tab" data-category="not">Not/Negative</div> -->
-                        </div>
-                        
-                        <!-- Coherence Issues Section (Initially Hidden) -->
-                        <div id="coherenceIssues" class="coherence-container" style="display: none;">
-                            <div class="coherence-header">
-                                <i class="fas fa-check-double"></i>
-                                <span class="coherence-title">Coherence Issues</span>
-                                <span id="coherenceCount" class="suggestion-count">0</span>
-                            </div>
-                            <div id="coherenceList" class="suggestion-list"></div>
                         </div>
                         
                         <!-- Overall Suggestion (Initially Hidden) -->
@@ -201,31 +190,33 @@
     <!-- Bottom Formatting Toolbar -->
     <div class="footer">
         <div class="footer-left">
-        <div class="footer-center">
-            <div class="format-group">
-            <button class="format-btn" data-cmd="bold"             title="Bold"><i class="fas fa-bold"></i></button>
-            <button class="format-btn" data-cmd="italic"           title="Italic"><i class="fas fa-italic"></i></button>
-            <button class="format-btn" data-cmd="insertUnorderedList" title="Bullet List"><i class="fas fa-list-ul"></i></button>
-            <button class="format-btn" data-cmd="insertOrderedList"   title="Numbered List"><i class="fas fa-list-ol"></i></button>           
-            </div>
+            <div class="footer-center">
+                <div class="format-group">
+                    <button class="format-btn" data-cmd="bold" title="Bold"><i class="fas fa-bold"></i></button>
+                    <button class="format-btn" data-cmd="italic" title="Italic"><i class="fas fa-italic"></i></button>
+                    <button class="format-btn" data-cmd="insertUnorderedList" title="Bullet List"><i class="fas fa-list-ul"></i></button>
+                    <button class="format-btn" data-cmd="insertOrderedList" title="Numbered List"><i class="fas fa-list-ol"></i></button>           
+                </div>
             </div>
         </div>
         
-        <!-- <div class="footer-center">
+        <!-- Translate button can be re-enabled if needed:
+        <div class="footer-center">
             <button id="translateBtn" class="btn primary-btn">
                 <i class="fas fa-magic"></i>
                 Translate
-              </button>
+            </button>
         </div> -->
         
         <div class="footer-right">
-        <!-- <div class="highlight-toggle">
-            <span class="toggle-text">Highlight Changes</span>
-            <label class="toggle-switch">
-            <input type="checkbox" id="highlightToggle" checked>
-            <span class="toggle-slider"></span>
-            </label>
-        </div> -->
+            <!-- Highlight toggle can be re-enabled if needed:
+            <div class="highlight-toggle">
+                <span class="toggle-text">Highlight Changes</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="highlightToggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div> -->
         </div>
     </div>
 
@@ -260,7 +251,7 @@
                 <i class="fas fa-print"></i>
                 Print
                 <span class="shortcut">Ctrl+P</span>
-              </div>              
+            </div>              
         </div>
         
         <div class="sidebar-section">
@@ -305,20 +296,16 @@
         
         <div class="sidebar-section">
             <div class="section-title">HELP</div>
-          
             <div id="supportBtn" class="sidebar-item">
-              <i class="fas fa-question-circle"></i> Support
+                <i class="fas fa-question-circle"></i> Support
             </div>
-          
             <div id="docsBtn" class="sidebar-item">
-              <i class="fas fa-book"></i> Documentation
+                <i class="fas fa-book"></i> Documentation
             </div>
-          
             <div id="feedbackBtn" class="sidebar-item">
-              <i class="fas fa-comment"></i> Feedback
+                <i class="fas fa-comment"></i> Feedback
             </div>
-          </div>
-          
+        </div>
     </div>
 
     <!-- Overlay for sidebar menu -->
@@ -358,6 +345,13 @@
         </div>
     </div>
 
+    <!-- Download form for document export -->
+    <form id="downloadForm" action="{{ url_for('download_docx') }}" method="POST" style="display: none;">
+        <input type="hidden" name="text" id="downloadTextInput" />
+        <input type="hidden" name="filename" id="downloadFilenameInput" />
+    </form>
+
+    <!-- JavaScript Files -->
     <script src="/static/js/main.js"></script>
     <script src="/static/js/sidebar-menu.js"></script>
     <script src="/static/js/text-analyzer.js"></script>
@@ -365,23 +359,28 @@
     <script src="/static/js/file-upload-fix.js"></script>
     <script src="/static/js/real-time-corrections.js"></script>
     
+    <!-- Inline JavaScript for immediate functionality -->
     <script>
-        // in main.js or a <script> after your HTML
+        // Format button functionality
         document.querySelectorAll('.format-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.execCommand(btn.dataset.cmd, false, null);
-                inputText.focus();
+                const inputText = document.getElementById('inputText');
+                if (inputText) inputText.focus();
             });
         });
 
-        // Add coherence check button event listener
-        document.getElementById('coherenceCheckBtn').addEventListener('click', function() {
-            if (window.checkTextCoherence) {
-                window.checkTextCoherence();
-            }
-        });
+        // Coherence check button event listener (if coherence check is added)
+        const coherenceCheckBtn = document.getElementById('coherenceCheckBtn');
+        if (coherenceCheckBtn) {
+            coherenceCheckBtn.addEventListener('click', function() {
+                if (window.checkTextCoherence) {
+                    window.checkTextCoherence();
+                }
+            });
+        }
 
-        // Modal close buttons
+        // Modal close button functionality
         document.querySelectorAll('.modal-close').forEach(closeBtn => {
             closeBtn.addEventListener('click', function() {
                 this.closest('.modal').classList.remove('active');
@@ -397,16 +396,44 @@
             });
         });
 
-        // Dismiss overall suggestion
-        document.getElementById('dismissOverallBtn').addEventListener('click', function() {
-            document.getElementById('overallSuggestion').style.display = 'none';
+        // Dismiss overall suggestion functionality
+        const dismissOverallBtn = document.getElementById('dismissOverallBtn');
+        if (dismissOverallBtn) {
+            dismissOverallBtn.addEventListener('click', function() {
+                const overallSuggestion = document.getElementById('overallSuggestion');
+                if (overallSuggestion) {
+                    overallSuggestion.style.display = 'none';
+                }
+            });
+        }
+
+        // Menu overlay functionality
+        const menuOverlay = document.getElementById('menuOverlay');
+        if (menuOverlay) {
+            menuOverlay.addEventListener('click', function() {
+                const sidebarMenu = document.getElementById('sidebarMenu');
+                if (sidebarMenu) {
+                    sidebarMenu.classList.remove('active');
+                    this.classList.remove('active');
+                }
+            });
+        }
+
+        // Initialize application state
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ Friction Language Translator initialized');
+            
+            // Initialize any additional components here
+            const inputText = document.getElementById('inputText');
+            const emptyState = document.querySelector('.empty-state');
+            
+            // Show empty state initially if no content
+            if (inputText && emptyState) {
+                if (!inputText.innerText.trim()) {
+                    emptyState.style.display = 'flex';
+                }
+            }
         });
-    </script> 
-    
-    <form id="downloadForm" action="{{ url_for('download_docx') }}" method="POST" style="display: none;">
-        <input type="hidden" name="text" id="downloadTextInput" />
-        <input type="hidden" name="filename" id="downloadFilenameInput" />
-    </form>
-             
+    </script>
 </body>
 </html>

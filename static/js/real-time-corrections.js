@@ -939,15 +939,24 @@ document.addEventListener('DOMContentLoaded', function() {
   /**
    * Show no suggestions message
    */
-  function showNoSuggestions() {
-    if (frictionWordsList) {
-      frictionWordsList.innerHTML = `
-        <div class="no-suggestions" style="text-align:center; padding:20px; color:var(--text-tertiary);">
-          No friction language detected
+  /**
+ * Show enhanced "Great writing!" message when no friction is detected
+ */
+function showNoSuggestions() {
+  if (frictionWordsList) {
+    frictionWordsList.innerHTML = `
+      <div class="no-suggestions">
+        <div class="no-suggestions-icon">
+          <i class="fas fa-check-circle"></i>
         </div>
-      `;
-    }
+        <div class="no-suggestions-title">Great writing!</div>
+        <div class="no-suggestions-text">
+          No friction language detected in your text.
+        </div>
+      </div>
+    `;
   }
+}
   
   /**
    * Show error message
